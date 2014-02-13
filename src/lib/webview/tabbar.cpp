@@ -76,7 +76,7 @@ TabBar::TabBar(QupZilla* mainClass, TabWidget* tabWidget)
     connect(m_tabPreviewHideTimer, SIGNAL(timeout()), m_tabPreview, SLOT(hideAnimated()));
 
     // ComboTabBar features
-    setUsesScrollButtons(true);
+    setUsesScrollButtons(false);
     setCloseButtonsToolTip(QupZilla::tr("Close Tab"));
     connect(this, SIGNAL(overFlowChanged(bool)), this, SLOT(overFlowChange(bool)));
     connect(this, SIGNAL(scrollBarValueChanged(int)), this, SLOT(hideTabPreview()));
@@ -338,7 +338,7 @@ int TabBar::comboTabBarPixelMetric(ComboTabBar::SizeType sizeType) const
     case ComboTabBar::ActiveTabMinimumWidth:
     case ComboTabBar::NormalTabMinimumWidth:
     case ComboTabBar::OverflowedTabWidth:
-        return 100;
+        return 0;
 
     case ComboTabBar::NormalTabMaximumWidth:
         return 250;
