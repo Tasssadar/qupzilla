@@ -62,6 +62,11 @@ TabBar::TabBar(QupZilla* mainClass, TabWidget* tabWidget)
 
     setAcceptDrops(true);
 
+    setStyleSheet(
+        "QTabBar::tab { border: 1px solid #333; background: #FFF; padding: 5px 1px 5px 1px; margin: 0 1px 0 1px; border-radius: 5px;}"
+        "QTabBar::tab:selected { background: #FFFFCC; }"
+    );
+
     connect(this, SIGNAL(currentChanged(int)), this, SLOT(currentTabChanged(int)));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequested(QPoint)));
 
