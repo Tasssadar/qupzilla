@@ -1452,8 +1452,8 @@ CloseButton::CloseButton(QWidget* parent)
 QSize CloseButton::sizeHint() const
 {
     ensurePolished();
-    static int width = style()->pixelMetric(QStyle::PM_TabCloseIndicatorWidth, 0, this);
-    static int height = style()->pixelMetric(QStyle::PM_TabCloseIndicatorHeight, 0, this);
+    static int width = 10; //style()->pixelMetric(QStyle::PM_TabCloseIndicatorWidth, 0, this);
+    static int height = 10; //style()->pixelMetric(QStyle::PM_TabCloseIndicatorHeight, 0, this);
     return QSize(width, height);
 }
 
