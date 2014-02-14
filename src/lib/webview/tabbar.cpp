@@ -659,7 +659,7 @@ bool TabBar::event(QEvent* event)
 {
     switch (event->type()) {
     case QEvent::ToolTip:
-        if (!m_showTabPreviews) {
+        if (!m_showTabPreviews && !isDragInProgress()) {
             QHelpEvent* ev = static_cast<QHelpEvent*>(event);
             int index = tabAt(ev->pos());
 

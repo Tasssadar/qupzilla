@@ -212,10 +212,16 @@ MainApplication::MainApplication(int &argc, char** argv)
         }
 
         QDir confPath = QDir(dataLocation);
+
+        QDir homePath = QDir(QDir::homePath() + QLatin1String("/.qupzilla/"));
+
+        if (!homePath.exists()) {
+            homePath = QDir::homePath() + QLatin1String("/.config/qupzilla/");
+        }
 #else // Unix
         QDir confPath = QDir(QDir::homePath() + QLatin1String("/.config/qupzilla/"));
-#endif
         QDir homePath = QDir(QDir::homePath() + QLatin1String("/.qupzilla/"));
+#endif
 
         if (homePath.exists() && !confPath.exists()) {
             PROFILEDIR = homePath.absolutePath() + QLatin1Char('/');
@@ -910,7 +916,7 @@ void MainApplication::saveSettings()
     }
 
     m_searchEnginesManager->saveSettings();
-    m_networkmanager->saveCertificates();
+    m_networkmanager->saveSettings();
     m_plugins->shutdown();
     qIconProvider->saveIconsToDatabase();
     clearTempPath();
