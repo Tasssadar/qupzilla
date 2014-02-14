@@ -32,7 +32,7 @@
 MouseGestures::MouseGestures(QObject* parent) :
     QObject(parent)
 {
-    m_filter = new QjtMouseGestureFilter(false, Qt::MiddleButton, 20);
+    m_filter = new QjtMouseGestureFilter(false, Qt::RightButton, 20);
 
     QjtMouseGesture* upGesture = new QjtMouseGesture(DirectionList() << Up, m_filter);
     connect(upGesture, SIGNAL(gestured()), this, SLOT(upGestured()));
