@@ -15,36 +15,45 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
-#ifndef CHROMEIMPORTER_H
-#define CHROMEIMPORTER_H
+#ifndef OPERAIMPORTER_H
+#define OPERAIMPORTER_H
 
-#include <QObject>
 #include <QFile>
+#include <QTextStream>
 
-#include "qz_namespace.h"
+#include "bookmarksimporter.h"
 
-class BookmarkItem;
-
-class QT_QUPZILLA_EXPORT ChromeImporter : public QObject
+class QT_QUPZILLA_EXPORT OperaImporter : public BookmarksImporter
 {
 public:
-    explicit ChromeImporter(QObject* parent = 0);
+    explicit OperaImporter(QObject* parent = 0);
 
-    void setFile(const QString &path);
-    bool openFile();
+    QString description() const;
+    QString standardPath() const;
 
-    BookmarkItem* exportBookmarks();
+    QString getPath(QWidget* parent);
+    bool prepareImport();
 
-    bool error() { return m_error; }
-    QString errorString() { return m_errorString; }
+    BookmarkItem* importBookmarks();
 
 private:
+    enum Token { EmptyLine,
+                 StartFolder,
+                 EndFolder,
+                 StartUrl,
+                 StartSeparator,
+                 StartDeleted,
+                 KeyValuePair,
+                 Invalid
+               };
+
+    Token parseLine(const QString &line);
+    QString m_key;
+    QString m_value;
+
     QString m_path;
     QFile m_file;
-
-    bool m_error;
-    QString m_errorString;
-
+    QTextStream m_stream;
 };
 
-#endif // CHROMEIMPORTER_H
+#endif // OPERAIMPORTER_H

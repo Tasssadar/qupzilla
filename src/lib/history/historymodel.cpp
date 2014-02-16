@@ -512,6 +512,7 @@ void HistoryModel::init()
     }
 }
 
+// HistoryFilterModel
 HistoryFilterModel::HistoryFilterModel(QAbstractItemModel* parent)
     : QSortFilterProxyModel(parent)
 {
@@ -520,7 +521,7 @@ HistoryFilterModel::HistoryFilterModel(QAbstractItemModel* parent)
 
     m_filterTimer = new QTimer(this);
     m_filterTimer->setSingleShot(true);
-    m_filterTimer->setInterval(500);
+    m_filterTimer->setInterval(300);
 
     connect(m_filterTimer, SIGNAL(timeout()), this, SLOT(startFiltering()));
 }
@@ -529,7 +530,6 @@ void HistoryFilterModel::setFilterFixedString(const QString &pattern)
 {
     m_pattern = pattern;
 
-    m_filterTimer->stop();
     m_filterTimer->start();
 }
 

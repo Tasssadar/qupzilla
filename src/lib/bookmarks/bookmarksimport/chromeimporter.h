@@ -15,39 +15,32 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
-#ifndef RELOADSTOPBUTTON_H
-#define RELOADSTOPBUTTON_H
+#ifndef CHROMEIMPORTER_H
+#define CHROMEIMPORTER_H
 
-#include <QWidget>
+#include <QFile>
+#include <QVariantList>
 
-#include "qz_namespace.h"
+#include "bookmarksimporter.h"
 
-class QTimer;
-
-class ToolButton;
-
-class QT_QUPZILLA_EXPORT ReloadStopButton : public QWidget
+class QT_QUPZILLA_EXPORT ChromeImporter : public BookmarksImporter
 {
-    Q_OBJECT
-
 public:
-    explicit ReloadStopButton(QWidget* parent = 0);
+    explicit ChromeImporter(QObject* parent = 0);
 
-    void showStopButton();
-    void showReloadButton();
+    QString description() const;
+    QString standardPath() const;
 
-    ToolButton* buttonStop() const;
-    ToolButton* buttonReload() const;
+    QString getPath(QWidget* parent);
+    bool prepareImport();
 
-private slots:
-    void updateButton();
+    BookmarkItem* importBookmarks();
 
 private:
-    bool m_loadInProgress;
-    QTimer* m_updateTimer;
+    void readBookmarks(const QVariantList &list, BookmarkItem* parent);
 
-    ToolButton* m_buttonStop;
-    ToolButton* m_buttonReload;
+    QString m_path;
+    QFile m_file;
 };
 
-#endif // RELOADSTOPBUTTON_H
+#endif // CHROMEIMPORTER_H

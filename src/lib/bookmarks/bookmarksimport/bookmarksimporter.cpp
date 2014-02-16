@@ -1,6 +1,6 @@
 /* ============================================================
 * QupZilla - WebKit based browser
-* Copyright (C) 2010-2014  David Rosca <nowrep@gmail.com>
+* Copyright (C) 2014  David Rosca <nowrep@gmail.com>
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -15,39 +15,28 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
-#ifndef RELOADSTOPBUTTON_H
-#define RELOADSTOPBUTTON_H
+#include "bookmarksimporter.h"
 
-#include <QWidget>
-
-#include "qz_namespace.h"
-
-class QTimer;
-
-class ToolButton;
-
-class QT_QUPZILLA_EXPORT ReloadStopButton : public QWidget
+BookmarksImporter::BookmarksImporter(QObject* parent)
+    : QObject(parent)
 {
-    Q_OBJECT
+}
 
-public:
-    explicit ReloadStopButton(QWidget* parent = 0);
+BookmarksImporter::~BookmarksImporter()
+{
+}
 
-    void showStopButton();
-    void showReloadButton();
+bool BookmarksImporter::error() const
+{
+    return !m_error.isEmpty();
+}
 
-    ToolButton* buttonStop() const;
-    ToolButton* buttonReload() const;
+QString BookmarksImporter::errorString() const
+{
+    return m_error;
+}
 
-private slots:
-    void updateButton();
-
-private:
-    bool m_loadInProgress;
-    QTimer* m_updateTimer;
-
-    ToolButton* m_buttonStop;
-    ToolButton* m_buttonReload;
-};
-
-#endif // RELOADSTOPBUTTON_H
+void BookmarksImporter::setError(const QString &error)
+{
+    m_error = error;
+}

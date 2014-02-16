@@ -15,27 +15,46 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
-#ifndef BOOKMARKSITEMDELEGATE_H
-#define BOOKMARKSITEMDELEGATE_H
+#ifndef BOOKMARKSIMPORTER_H
+#define BOOKMARKSIMPORTER_H
 
-#include <QStyledItemDelegate>
+#include <QObject>
 
 #include "qz_namespace.h"
 
-class QTreeView;
+class QIcon;
 
-class QT_QUPZILLA_EXPORT BookmarksItemDelegate : public QStyledItemDelegate
+class BookmarkItem;
+
+class QT_QUPZILLA_EXPORT BookmarksImporter : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit BookmarksItemDelegate(QTreeView* parent = 0);
+    explicit BookmarksImporter(QObject* parent = 0);
+    virtual ~BookmarksImporter();
 
-    void paint(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    bool error() const;
+    QString errorString() const;
+
+    virtual QString description() const = 0;
+    virtual QString standardPath() const = 0;
+
+    // Get filename from user (or a directory)
+    virtual QString getPath(QWidget* parent) = 0;
+
+    // Prepare import (check if file exists, ...), return false on error
+    virtual bool prepareImport() = 0;
+
+    // Import bookmarks (it must return root folder)
+    virtual BookmarkItem* importBookmarks() = 0;
+
+protected:
+    // Empty error = no error
+    void setError(const QString &error);
 
 private:
-    QTreeView* m_tree;
-    mutable QRect m_lastRect;
+    QString m_error;
 };
 
-#endif // BOOKMARKSITEMDELEGATE_H
+#endif // BOOKMARKSIMPORTER_H

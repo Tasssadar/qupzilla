@@ -54,7 +54,7 @@
 #include "navigationbar.h"
 #include "pagescreen.h"
 #include "webinspectordockwidget.h"
-#include "bookmarksimportdialog.h"
+#include "bookmarksimport/bookmarksimportdialog.h"
 #include "qztools.h"
 #include "actioncopy.h"
 #include "reloadstopbutton.h"
@@ -2098,7 +2098,6 @@ void QupZilla::closeEvent(QCloseEvent* event)
     }
 
     m_isClosing = true;
-    mApp->saveStateSlot();
 
 #ifndef Q_OS_MAC
     if (mApp->windowCount() == 1) {

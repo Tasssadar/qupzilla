@@ -40,7 +40,6 @@ INCLUDEPATH += 3rdparty\
                adblock\
                desktopnotifications\
                opensearch\
-               bookmarksimport\
                popupwindow\
 
 DEPENDPATH += 3rdparty\
@@ -65,7 +64,6 @@ DEPENDPATH += 3rdparty\
               adblock\
               desktopnotifications\
               opensearch\
-              bookmarksimport\
               popupwindow\
 
 SOURCES += \
@@ -164,18 +162,19 @@ SOURCES += \
     opensearch/searchenginesmanager.cpp \
     opensearch/searchenginesdialog.cpp \
     opensearch/editsearchengine.cpp \
-    bookmarksimport/firefoximporter.cpp \
-    bookmarksimport/chromeimporter.cpp \
-    bookmarksimport/operaimporter.cpp \
-    bookmarksimport/ieimporter.cpp \
-    bookmarksimport/bookmarksimportdialog.cpp \
+    bookmarks/bookmarksimport/bookmarksimporter.cpp \
+    bookmarks/bookmarksimport/firefoximporter.cpp \
+    bookmarks/bookmarksimport/chromeimporter.cpp \
+    bookmarks/bookmarksimport/operaimporter.cpp \
+    bookmarks/bookmarksimport/ieimporter.cpp \
+    bookmarks/bookmarksimport/htmlimporter.cpp \
+    bookmarks/bookmarksimport/bookmarksimportdialog.cpp \
     tools/iconfetcher.cpp \
     tools/followredirectreply.cpp \
     webview/webhistorywrapper.cpp \
     tools/pagethumbnailer.cpp \
     plugins/speeddial.cpp \
     other/databasewriter.cpp \
-    bookmarksimport/htmlimporter.cpp \
     tools/enhancedmenu.cpp \
     navigation/siteicon.cpp \
     navigation/goicon.cpp \
@@ -354,18 +353,19 @@ HEADERS  += \
     opensearch/searchenginesmanager.h \
     opensearch/searchenginesdialog.h \
     opensearch/editsearchengine.h \
-    bookmarksimport/firefoximporter.h \
-    bookmarksimport/chromeimporter.h \
-    bookmarksimport/operaimporter.h \
-    bookmarksimport/ieimporter.h \
-    bookmarksimport/bookmarksimportdialog.h \
+    bookmarks/bookmarksimport/bookmarksimporter.h \
+    bookmarks/bookmarksimport/firefoximporter.h \
+    bookmarks/bookmarksimport/chromeimporter.h \
+    bookmarks/bookmarksimport/operaimporter.h \
+    bookmarks/bookmarksimport/ieimporter.h \
+    bookmarks/bookmarksimport/htmlimporter.h \
+    bookmarks/bookmarksimport/bookmarksimportdialog.h \
     tools/iconfetcher.h \
     tools/followredirectreply.h \
     webview/webhistorywrapper.h \
     tools/pagethumbnailer.h \
     plugins/speeddial.h \
     other/databasewriter.h \
-    bookmarksimport/htmlimporter.h \
     tools/enhancedmenu.h \
     navigation/siteicon.h \
     navigation/goicon.h \
@@ -490,7 +490,7 @@ FORMS    += \
     preferences/addacceptlanguage.ui \
     opensearch/searchenginesdialog.ui \
     opensearch/editsearchengine.ui \
-    bookmarksimport/bookmarksimportdialog.ui \
+    bookmarks/bookmarksimport/bookmarksimportdialog.ui \
     other/checkboxdialog.ui \
     other/iconchooser.ui \
     adblock/adblockaddsubscriptiondialog.ui \
@@ -534,6 +534,10 @@ win32 {
 
 os2 {
     LIBS += -lcrypto
+}
+
+freebsd-* {
+    LIBS += -lexecinfo
 }
 
 mac {
