@@ -281,6 +281,12 @@ void ComboTabBar::slotTabMoved(int from, int to)
     }
     else {
         emit tabMoved(from + pinnedTabsCount(), to + pinnedTabsCount());
+
+        // FIXME: tab content is not properly updated (Qt bug?)
+        // Two tabs, moveTab(1, 0); results in currentIndex = 0,
+        // but tab 1's content is displayed
+        m_mainTabBar->setCurrentIndex(from);
+        m_mainTabBar->setCurrentIndex(to);
     }
 }
 
