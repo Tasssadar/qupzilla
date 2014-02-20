@@ -18,6 +18,7 @@
 #include "browsinglibrary.h"
 #include "ui_browsinglibrary.h"
 #include "bookmarksimport/bookmarksimportdialog.h"
+#include "bookmarksexport/bookmarksexportdialog.h"
 #include "historymanager.h"
 #include "bookmarksmanager.h"
 #include "rssmanager.h"
@@ -28,11 +29,11 @@
 #include <QMenu>
 #include <QCloseEvent>
 
-BrowsingLibrary::BrowsingLibrary(QupZilla* mainClass, QWidget* parent)
+BrowsingLibrary::BrowsingLibrary(BrowserWindow* window, QWidget* parent)
     : QWidget(parent)
     , ui(new Ui::BrowsingLibrary)
-    , m_historyManager(new HistoryManager(mainClass))
-    , m_bookmarksManager(new BookmarksManager(mainClass))
+    , m_historyManager(new HistoryManager(window))
+    , m_bookmarksManager(new BookmarksManager(window))
     , m_rssManager(mApp->rssManager())
     , m_rssLoaded(false)
 {
@@ -54,7 +55,7 @@ BrowsingLibrary::BrowsingLibrary(QupZilla* mainClass, QWidget* parent)
 
     QMenu* m = new QMenu(this);
     m->addAction(tr("Import Bookmarks..."), this, SLOT(importBookmarks()));
-    m->addAction(tr("Export Bookmarks to HTML..."), this, SLOT(exportBookmarks()));
+    m->addAction(tr("Export Bookmarks..."), this, SLOT(exportBookmarks()));
     ui->importExport->setMenu(m);
 
     connect(ui->tabs, SIGNAL(CurrentChanged(int)), this, SLOT(currentIndexChanged(int)));
@@ -107,34 +108,35 @@ void BrowsingLibrary::importBookmarks()
 
 void BrowsingLibrary::exportBookmarks()
 {
-    qDebug("BrowsingLibrary::exportBookmarks() NOT IMPLEMENTED");
+    BookmarksExportDialog* d = new BookmarksExportDialog(this);
+    d->show();
 }
 
-void BrowsingLibrary::showHistory(QupZilla* mainClass)
+void BrowsingLibrary::showHistory(BrowserWindow* window)
 {
     ui->tabs->SetCurrentIndex(0);
     show();
-    m_historyManager->setMainWindow(mainClass);
+    m_historyManager->setMainWindow(window);
 
     raise();
     activateWindow();
 }
 
-void BrowsingLibrary::showBookmarks(QupZilla* mainClass)
+void BrowsingLibrary::showBookmarks(BrowserWindow* window)
 {
     ui->tabs->SetCurrentIndex(1);
     show();
-    m_bookmarksManager->setMainWindow(mainClass);
+    m_bookmarksManager->setMainWindow(window);
 
     raise();
     activateWindow();
 }
 
-void BrowsingLibrary::showRSS(QupZilla* mainClass)
+void BrowsingLibrary::showRSS(BrowserWindow* window)
 {
     ui->tabs->SetCurrentIndex(2);
     show();
-    m_rssManager->setMainWindow(mainClass);
+    m_rssManager->setMainWindow(window);
 
     if (!m_rssLoaded) {
         m_rssManager->refreshTable();

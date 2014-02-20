@@ -28,14 +28,14 @@
 
 class QStringListModel;
 
-class QupZilla;
+class BrowserWindow;
 class LineEdit;
 class ClickableLabel;
 class SearchEnginesManager;
 class SearchEnginesDialog;
 class OpenSearchEngine;
 
-class QT_QUPZILLA_EXPORT WebSearchBar_Button : public ClickableLabel
+class QUPZILLA_EXPORT WebSearchBar_Button : public ClickableLabel
 {
 public:
     explicit WebSearchBar_Button(QWidget* parent = 0);
@@ -44,7 +44,7 @@ private:
     void contextMenuEvent(QContextMenuEvent* event);
 };
 
-class QT_QUPZILLA_EXPORT WebSearchBar : public LineEdit
+class QUPZILLA_EXPORT WebSearchBar : public LineEdit
 {
     Q_OBJECT
     Q_PROPERTY(QSize fixedsize READ size WRITE setFixedSize)
@@ -52,7 +52,7 @@ class QT_QUPZILLA_EXPORT WebSearchBar : public LineEdit
     Q_PROPERTY(int fixedheight READ height WRITE setFixedHeight)
 
 public:
-    explicit WebSearchBar(QupZilla* mainClass);
+    explicit WebSearchBar(BrowserWindow* window);
 
 private slots:
     void searchChanged(const ButtonWithMenu::Item &item);
@@ -85,7 +85,7 @@ private:
     OpenSearchEngine* m_openSearchEngine;
     SearchEngine m_activeEngine;
 
-    QupZilla* p_QupZilla;
+    BrowserWindow* m_window;
 
     WebSearchBar_Button* m_buttonSearch;
     ButtonWithMenu* m_boxSearchType;

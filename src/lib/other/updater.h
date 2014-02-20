@@ -25,16 +25,16 @@
 class QNetworkReply;
 class QUrl;
 
-class QupZilla;
+class BrowserWindow;
 
-class QT_QUPZILLA_EXPORT Updater : public QObject
+class QUPZILLA_EXPORT Updater : public QObject
 {
     Q_OBJECT
 public:
-    explicit Updater(QupZilla* mainClass, QObject* parent = 0);
+    explicit Updater(BrowserWindow* window, QObject* parent = 0);
     ~Updater();
 
-    struct QT_QUPZILLA_EXPORT Version {
+    struct QUPZILLA_EXPORT Version {
         bool isValid;
         int majorVersion;
         int minorVersion;
@@ -60,7 +60,7 @@ private slots:
 private:
     void startDownloadingUpdateInfo(const QUrl &url);
 
-    QupZilla* p_QupZilla;
+    BrowserWindow* m_window;
 };
 
 #endif // UPDATER_H

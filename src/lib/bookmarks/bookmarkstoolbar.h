@@ -25,16 +25,16 @@
 class QHBoxLayout;
 class QTimer;
 
-class QupZilla;
+class BrowserWindow;
 class Bookmarks;
 class BookmarkItem;
 class BookmarksToolbarButton;
 
-class QT_QUPZILLA_EXPORT BookmarksToolbar : public QWidget
+class QUPZILLA_EXPORT BookmarksToolbar : public QWidget
 {
     Q_OBJECT
 public:
-    explicit BookmarksToolbar(QupZilla* mainClass, QWidget* parent = 0);
+    explicit BookmarksToolbar(BrowserWindow* window, QWidget* parent = 0);
 
 private slots:
     void contextMenuRequested(const QPoint &pos);
@@ -55,7 +55,7 @@ private:
     void dropEvent(QDropEvent* e);
     void dragEnterEvent(QDragEnterEvent* e);
 
-    QupZilla* m_window;
+    BrowserWindow* m_window;
     Bookmarks* m_bookmarks;
     BookmarkItem* m_clickedBookmark;
     QHBoxLayout* m_layout;

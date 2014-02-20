@@ -24,15 +24,15 @@
 
 #include "qz_namespace.h"
 
-class QupZilla;
+class BrowserWindow;
 class TabWidget;
 class TabPreview;
 
-class QT_QUPZILLA_EXPORT TabBar : public ComboTabBar
+class QUPZILLA_EXPORT TabBar : public ComboTabBar
 {
     Q_OBJECT
 public:
-    explicit TabBar(QupZilla* mainClass, TabWidget* tabWidget);
+    explicit TabBar(BrowserWindow* window, TabWidget* tabWidget);
 
     void loadSettings();
 
@@ -104,7 +104,7 @@ private:
     QSize tabSizeHint(int index, bool fast) const;
     int comboTabBarPixelMetric(ComboTabBar::SizeType sizeType) const;
 
-    QupZilla* p_QupZilla;
+    BrowserWindow* m_window;
     TabWidget* m_tabWidget;
     TabPreview* m_tabPreview;
     QTimer* m_tabPreviewShowTimer;

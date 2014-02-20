@@ -28,14 +28,14 @@
 class QWebSecurityOrigin;
 class QEventLoop;
 
-class QupZilla;
+class BrowserWindow;
 class AdBlockRule;
 class TabbedWebView;
 class SpeedDial;
 class NetworkManagerProxy;
 class DelayedFileWatcher;
 
-class QT_QUPZILLA_EXPORT WebPage : public QWebPage
+class QUPZILLA_EXPORT WebPage : public QWebPage
 {
     Q_OBJECT
 public:

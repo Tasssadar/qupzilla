@@ -26,13 +26,13 @@ class QUrl;
 class QWebElement;
 class QNetworkRequest;
 
-class QupZilla;
+class BrowserWindow;
 class WebPage;
 class PasswordManager;
 struct PageFormData;
 struct PasswordEntry;
 
-class QT_QUPZILLA_EXPORT AutoFill : public QObject
+class QUPZILLA_EXPORT AutoFill : public QObject
 {
     Q_OBJECT
 

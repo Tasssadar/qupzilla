@@ -24,17 +24,17 @@
 class QLabel;
 class QHostInfo;
 
-class QupZilla;
+class BrowserWindow;
 class TabWidget;
 class WebPage;
 class WebTab;
 class Menu;
 
-class QT_QUPZILLA_EXPORT TabbedWebView : public WebView
+class QUPZILLA_EXPORT TabbedWebView : public WebView
 {
     Q_OBJECT
 public:
-    explicit TabbedWebView(QupZilla* mainClass, WebTab* webTab);
+    explicit TabbedWebView(BrowserWindow* window, WebTab* webTab);
     ~TabbedWebView();
 
     void setWebPage(WebPage* pag);
@@ -45,8 +45,8 @@ public:
     QString getIp() const;
     int tabIndex() const;
 
-    QupZilla* mainWindow() const;
-    void moveToWindow(QupZilla* window);
+    BrowserWindow* mainWindow() const;
+    void moveToWindow(BrowserWindow* window);
 
     QWidget* overlayForJsAlert();
     void disconnectObjects();
@@ -88,7 +88,7 @@ private:
 
     bool isCurrent();
 
-    QupZilla* p_QupZilla;
+    BrowserWindow* m_window;
     WebTab* m_webTab;
     Menu* m_menu;
 

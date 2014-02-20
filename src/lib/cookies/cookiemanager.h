@@ -29,9 +29,9 @@ class CookieManager;
 
 class QTreeWidgetItem;
 
-class QupZilla;
+class BrowserWindow;
 
-class QT_QUPZILLA_EXPORT CookieManager : public QWidget
+class QUPZILLA_EXPORT CookieManager : public QWidget
 {
     Q_OBJECT
 

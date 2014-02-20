@@ -23,10 +23,10 @@
 class PopupWindow;
 class TipLabel;
 
-class QT_QUPZILLA_EXPORT PopupStatusBarMessage
+class QUPZILLA_EXPORT PopupStatusBarMessage
 {
 public:
-    explicit PopupStatusBarMessage(PopupWindow* mainClass);
+    explicit PopupStatusBarMessage(PopupWindow* window);
 
     void showMessage(const QString &message);
     void clearMessage();

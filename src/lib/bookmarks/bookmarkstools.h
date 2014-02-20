@@ -26,7 +26,7 @@
 class Bookmarks;
 class BookmarkItem;
 
-class QT_QUPZILLA_EXPORT BookmarksFoldersMenu : public QMenu
+class QUPZILLA_EXPORT BookmarksFoldersMenu : public QMenu
 {
     Q_OBJECT
 
@@ -48,7 +48,7 @@ private:
     BookmarkItem* m_selectedFolder;
 };
 
-class QT_QUPZILLA_EXPORT BookmarksFoldersButton : public QPushButton
+class QUPZILLA_EXPORT BookmarksFoldersButton : public QPushButton
 {
     Q_OBJECT
 
@@ -70,12 +70,12 @@ private:
     BookmarkItem* m_selectedFolder;
 };
 
-class QupZilla;
+class BrowserWindow;
 class TabWidget;
 class Action;
 class Menu;
 
-class QT_QUPZILLA_EXPORT BookmarksTools
+class QUPZILLA_EXPORT BookmarksTools
 {
 public:
     // Add Bookmark Dialogs
@@ -83,10 +83,10 @@ public:
     static bool bookmarkAllTabsDialog(QWidget* parent, TabWidget* tabWidget, BookmarkItem* folder = 0);
 
     // Open Bookmarks
-    static void openBookmark(QupZilla* window, BookmarkItem* item);
-    static void openBookmarkInNewTab(QupZilla* window, BookmarkItem* item);
+    static void openBookmark(BrowserWindow* window, BookmarkItem* item);
+    static void openBookmarkInNewTab(BrowserWindow* window, BookmarkItem* item);
     static void openBookmarkInNewWindow(BookmarkItem* item);
-    static void openFolderInTabs(QupZilla* window, BookmarkItem* folder);
+    static void openFolderInTabs(BrowserWindow* window, BookmarkItem* folder);
 
     // Create Menu
     static void addActionToMenu(QObject* receiver, Menu* menu, BookmarkItem* item);

@@ -23,17 +23,17 @@
 #include "enhancedmenu.h"
 #include "qz_namespace.h"
 
-class QupZilla;
+class BrowserWindow;
 class BookmarkItem;
 
-class QT_QUPZILLA_EXPORT BookmarksMenu : public Menu
+class QUPZILLA_EXPORT BookmarksMenu : public Menu
 {
     Q_OBJECT
 
 public:
     explicit BookmarksMenu(QWidget* parent = 0);
 
-    void setMainWindow(QupZilla* window);
+    void setMainWindow(BrowserWindow* window);
 
 private slots:
     void bookmarkPage();
@@ -57,7 +57,7 @@ private:
     void init();
     void refresh();
 
-    QPointer<QupZilla> m_window;
+    QPointer<BrowserWindow> m_window;
     bool m_changed;
 };
 

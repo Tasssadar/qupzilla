@@ -32,17 +32,17 @@ class QAbstractButton;
 class QListWidgetItem;
 
 class AutoFillManager;
-class QupZilla;
+class BrowserWindow;
 class PluginsManager;
 class DesktopNotification;
 class ThemeManager;
 
-class QT_QUPZILLA_EXPORT Preferences : public QDialog
+class QUPZILLA_EXPORT Preferences : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit Preferences(QupZilla* mainClass, QWidget* parent = 0);
+    explicit Preferences(BrowserWindow* window, QWidget* parent = 0);
     ~Preferences();
 
 private slots:
@@ -97,7 +97,7 @@ private:
     void closeEvent(QCloseEvent* event);
 
     Ui::Preferences* ui;
-    QupZilla* p_QupZilla;
+    BrowserWindow* m_window;
     AutoFillManager* m_autoFillManager;
     PluginsManager* m_pluginsList;
     ThemeManager* m_themesManager;

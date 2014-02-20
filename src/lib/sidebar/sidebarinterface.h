@@ -24,9 +24,9 @@
 
 class QAction;
 
-class QupZilla;
+class BrowserWindow;
 
-class QT_QUPZILLA_EXPORT SideBarInterface : public QObject
+class QUPZILLA_EXPORT SideBarInterface : public QObject
 {
 public:
     explicit SideBarInterface(QObject* parent = 0) : QObject(parent) { }
@@ -34,7 +34,7 @@ public:
     virtual QString title() const = 0;
 
     virtual QAction* createMenuAction() = 0;
-    virtual QWidget* createSideBarWidget(QupZilla* mainWindow) = 0;
+    virtual QWidget* createSideBarWidget(BrowserWindow* mainWindow) = 0;
 };
 
 #endif // SIDEBARINTERFACE_H
