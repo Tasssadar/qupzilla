@@ -165,6 +165,7 @@ private slots:
     void checkRss();
     void addSpeedDial();
     void configureSpeedDial();
+    void setUrlFromHistory();
 
 private:
     QList<int> m_zoomLevels;

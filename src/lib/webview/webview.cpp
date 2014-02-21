@@ -416,7 +416,16 @@ void WebView::slotLoadFinished()
 void WebView::frameStateChanged()
 {
     // QWebFrame::baseUrl() is not updated yet, so we are invoking 0 second timer
-    QTimer::singleShot(0, this, SLOT(emitChangedUrl()));
+    QTimer::singleShot(0, this, SLOT(setUrlFromHistory()));
+}
+
+void WebView::setUrlFromHistory()
+{
+    QWebHistory *history = page()->history();
+    if(history->count() < 1)
+        return;
+
+    emit urlChanged(history->items().back().url());
 }
 
 void WebView::emitChangedUrl()
