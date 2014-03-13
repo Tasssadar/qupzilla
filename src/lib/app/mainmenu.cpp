@@ -534,8 +534,8 @@ void MainMenu::init()
     connect(m_menuEdit, SIGNAL(aboutToShow()), this, SLOT(aboutToShowEditMenu()));
     connect(m_menuEdit, SIGNAL(aboutToHide()), this, SLOT(aboutToHideEditMenu()));
 
-    ADD_ACTION("Edit/Undo", m_menuEdit, QIcon::fromTheme(QSL("edit-undo")), tr("&Undo"), SLOT(editUndo()), "Ctrl+Z");
-    ADD_ACTION("Edit/Redo", m_menuEdit, QIcon::fromTheme(QSL("edit-redo")), tr("&Redo"), SLOT(editRedo()), "Ctrl+Shift+Z");
+    ADD_ACTION("Edit/Undo", m_menuEdit, QIcon::fromTheme(QSL("edit-undo")), tr("&Undo"), SLOT(editUndo()), "Ctrl+Shift+Z");
+    ADD_ACTION("Edit/Redo", m_menuEdit, QIcon::fromTheme(QSL("edit-redo")), tr("&Redo"), SLOT(editRedo()), "Ctrl+Shift+Y");
     m_menuEdit->addSeparator();
     ADD_ACTION("Edit/Cut", m_menuEdit, QIcon::fromTheme(QSL("edit-cut")), tr("&Cut"), SLOT(editCut()), "Ctrl+X");
     ADD_ACTION("Edit/Copy", m_menuEdit, QIcon::fromTheme(QSL("edit-copy")), tr("C&opy"), SLOT(editCopy()), "Ctrl+C");
@@ -615,7 +615,7 @@ void MainMenu::init()
 
     // Other actions
     action = new QAction(QIcon::fromTheme(QSL("user-trash")), tr("Restore &Closed Tab"), this);
-    action->setShortcut(QKeySequence(QSL("Ctrl+Shift+T")));
+    action->setShortcut(QKeySequence(QSL("Ctrl+Z")));
     connect(action, SIGNAL(triggered()), this, SLOT(restoreClosedTab()));
     m_actions[QSL("Other/RestoreClosedTab")] = action;
 
