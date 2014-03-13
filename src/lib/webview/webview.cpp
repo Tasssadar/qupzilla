@@ -455,7 +455,8 @@ void WebView::setUrlFromHistory()
     if(history->count() < 1)
         return;
 
-    emit urlChanged(history->items().back().url());
+    int urlIdx = history->items().count() - history->forwardItems(history->maximumItemCount()).count() - 1;
+    emit urlChanged(history->items().at(urlIdx).url());
 }
 
 void WebView::emitChangedUrl()
