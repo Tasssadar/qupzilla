@@ -18,7 +18,7 @@
 #ifndef COMBOTABBAR_H
 #define COMBOTABBAR_H
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 #include <QTabBar>
 #include <QScrollBar>
@@ -136,18 +136,25 @@ public slots:
     void ensureVisible(int index = -1, int xmargin = -1);
     void setCurrentIndex(int index);
 
+signals:
+    void overFlowChanged(bool overFlow);
+    void currentChanged(int index);
+    void tabCloseRequested(int index);
+    void tabMoved(int from, int to);
+    void scrollBarValueChanged(int value);
+
 private slots:
     void setMinimumWidths();
     void slotCurrentChanged(int index);
     void slotTabCloseRequested(int index);
     void slotTabMoved(int from, int to);
     void closeTabFromButton();
-    void enableUpdates();
     void updateTabBars();
 
 protected:
     int mainTabBarWidth() const;
     int pinTabBarWidth() const;
+
     void wheelEvent(QWheelEvent* event);
     void showEvent(QShowEvent* event);
     void enterEvent(QEvent* event);
@@ -161,10 +168,10 @@ protected:
     virtual void tabRemoved(int index);
 
 private:
+    TabBarHelper* mainTabBar() const;
     TabBarHelper* localTabBar(int index = -1) const;
-    int toLocalIndex(int globalIndex) const;
 
-    inline TabBarHelper* mainTabBar() { return m_mainTabBar; }
+    int toLocalIndex(int globalIndex) const;
     void updatePinnedTabBarVisibility();
 
     QHBoxLayout* m_mainLayout;
@@ -178,13 +185,6 @@ private:
     QString m_closeButtonsToolTip;
     bool m_mainBarOverFlowed;
     bool m_usesScrollButtons;
-
-signals:
-    void overFlowChanged(bool overFlow);
-    void currentChanged(int index);
-    void tabCloseRequested(int index);
-    void tabMoved(int from, int to);
-    void scrollBarValueChanged(int value);
 };
 
 class QUPZILLA_EXPORT TabBarHelper : public QTabBar

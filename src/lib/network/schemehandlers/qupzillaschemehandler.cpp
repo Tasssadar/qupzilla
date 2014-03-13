@@ -25,6 +25,7 @@
 #include "pluginproxy.h"
 #include "plugininterface.h"
 #include "settings.h"
+#include "datapaths.h"
 #include "iconprovider.h"
 
 #include <QTextStream>
@@ -194,7 +195,7 @@ QString QupZillaSchemeReply::startPage()
     sPage.replace(QLatin1String("%SEARCH-BY%"), tr("Search results provided by DuckDuckGo"));
     sPage.replace(QLatin1String("%WWW%"), Qz::WIKIADDRESS);
     sPage.replace(QLatin1String("%ABOUT-QUPZILLA%"), tr("About QupZilla"));
-    sPage.replace(QLatin1String("%PRIVATE-BROWSING%"), mApp->isPrivateSession() ? tr("<h1>Private Browsing</h1>") : QString());
+    sPage.replace(QLatin1String("%PRIVATE-BROWSING%"), mApp->isPrivate() ? tr("<h1>Private Browsing</h1>") : QString());
     sPage = QzTools::applyDirectionToPage(sPage);
 
     return sPage;
@@ -345,9 +346,7 @@ QString QupZillaSchemeReply::restorePage()
         rPage.append(QzTools::readAllFileContents(":html/restore.html"));
         rPage.replace(QLatin1String("%FAVICON%"), QLatin1String("qrc:icons/qupzilla.png"));
         rPage.replace(QLatin1String("%BOX-BORDER%"), QLatin1String("qrc:html/box-border.png"));
-        rPage.replace(QLatin1String("%IMAGE%"), QzTools::pixmapToByteArray(qIconProvider->standardIcon(QStyle::SP_MessageBoxWarning).pixmap(45, 45)));
-
-
+        rPage.replace(QLatin1String("%IMAGE%"), QzTools::pixmapToByteArray(IconProvider::standardIcon(QStyle::SP_MessageBoxWarning).pixmap(45, 45)));
         rPage.replace(QLatin1String("%TITLE%"), tr("Restore Session"));
         rPage.replace(QLatin1String("%OOPS%"), tr("Oops, QupZilla crashed."));
         rPage.replace(QLatin1String("%APOLOGIZE%"), tr("We apologize for this. Would you like to restore the last saved state?"));
@@ -397,13 +396,13 @@ QString QupZillaSchemeReply::configPage()
                       QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Platform"), QzTools::operatingSystem()));
 
         cPage.replace(QLatin1String("%PATHS-TEXT%"),
-                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Profile"), mApp->currentProfilePath()) +
-                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Settings"), mApp->currentProfilePath() + "settings.ini") +
-                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Saved session"), mApp->currentProfilePath() + "session.dat") +
-                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Pinned tabs"), mApp->currentProfilePath() + "pinnedtabs.dat") +
-                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Data"), mApp->DATADIR) +
-                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Themes"), mApp->THEMESDIR) +
-                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Translations"), mApp->TRANSLATIONSDIR));
+                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Profile"), DataPaths::currentProfilePath()) +
+                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Settings"), DataPaths::currentProfilePath() + "/settings.ini") +
+                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Saved session"), DataPaths::currentProfilePath() + "/session.dat") +
+                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Pinned tabs"), DataPaths::currentProfilePath() + "/pinnedtabs.dat") +
+                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Data"), DataPaths::path(DataPaths::AppData)) +
+                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Themes"), DataPaths::path(DataPaths::Themes)) +
+                      QString("<dt>%1</dt><dd>%2<dd>").arg(tr("Translations"), DataPaths::path(DataPaths::Translations)));
 
 #ifdef QUPZILLA_DEBUG_BUILD
         QString debugBuild = tr("<b>Enabled</b>");
@@ -411,7 +410,7 @@ QString QupZillaSchemeReply::configPage()
         QString debugBuild = tr("Disabled");
 #endif
 
-#if defined (USE_WEBGL) || (QTWEBKIT_FROM_2_3 && defined(QZ_WS_X11))
+#if defined (USE_WEBGL) || (QTWEBKIT_FROM_2_3 && defined(Q_OS_UNIX))
         QString webGLEnabled = tr("<b>Enabled</b>");
 #else
         QString webGLEnabled = tr("Disabled");
@@ -423,7 +422,7 @@ QString QupZillaSchemeReply::configPage()
         QString w7APIEnabled = tr("Disabled");
 #endif
 
-#if defined(QZ_WS_X11) && defined(KDE_INTEGRATION)
+#if defined(Q_OS_UNIX) && defined(KDE_INTEGRATION)
         QString KDEIntegration = tr("<b>Enabled</b>");
 #else
         QString KDEIntegration = tr("Disabled");

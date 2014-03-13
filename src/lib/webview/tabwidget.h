@@ -25,7 +25,7 @@
 
 #include "tabstackedwidget.h"
 #include "toolbutton.h"
-#include "qz_namespace.h"
+#include "qzcommon.h"
 #include "webtab.h"
 
 class QStackedWidget;
@@ -72,8 +72,6 @@ public:
     explicit TabWidget(BrowserWindow* mainclass, QWidget* parent = 0);
     ~TabWidget();
 
-    void loadSettings();
-
     QByteArray saveState();
     bool restoreState(const QVector<WebTab::SavedTab> &tabs, int currentTab);
     void closeRecoveryTab();
@@ -105,8 +103,6 @@ public:
     ToolButton* buttonListTabs() const;
     AddTabButton* buttonAddTab() const;
 
-    void disconnectObjects();
-
 public slots:
     int addView(const QUrl &url, const Qz::NewTabPositionFlags &openFlags, bool selectLine = false, bool pinned = false);
     int addView(const QNetworkRequest &req, const Qz::NewTabPositionFlags &openFlags, bool selectLine = false, bool pinned = false);
@@ -135,7 +131,12 @@ public slots:
 
     void tabBarOverFlowChanged(bool overFlowed);
 
+signals:
+    void changed();
+
 private slots:
+    void loadSettings();
+
     void aboutToShowTabsMenu();
     void actionChangeIndex();
     void tabMoved(int before, int after);
@@ -146,7 +147,7 @@ private:
 
     inline bool validIndex(int index) const { return index >= 0 && index < count(); }
 
-    bool m_dontQuitWithOneTab;
+    bool m_dontCloseWithOneTab;
     bool m_closedInsteadOpened;
     bool m_newTabAfterActive;
     bool m_newEmptyTabAfterActive;

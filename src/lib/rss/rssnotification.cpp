@@ -41,7 +41,7 @@ RSSNotification::RSSNotification(const QString &title, const QUrl &url, WebView*
     setAttribute(Qt::WA_DeleteOnClose);
 
     ui->setupUi(widget());
-    ui->closeButton->setIcon(qIconProvider->standardIcon(QStyle::SP_DialogCloseButton));
+    ui->closeButton->setIcon(IconProvider::standardIcon(QStyle::SP_DialogCloseButton));
     ui->label->setText(tr("RSS feed <b>\"%1\"</b>").arg(title));
 
     RssApp bloglines;
@@ -70,7 +70,7 @@ RSSNotification::RSSNotification(const QString &title, const QUrl &url, WebView*
 
     m_rssApps << bloglines << myaol << netvibes << yahoo;
 
-#ifdef QZ_WS_X11
+#ifdef Q_OS_UNIX
     const QString akregatorBin = QzTools::resolveFromPath("akregator");
     const QString lifereaBin = QzTools::resolveFromPath("liferea");
     const QString lifereaAddFeedBin = QzTools::resolveFromPath("liferea-add-feed");
@@ -163,7 +163,7 @@ void RSSNotification::addRss()
     case Internal:
         success = mApp->rssManager()->addRssFeed(m_url, m_title, m_view->icon());
         if (success) {
-            mApp->browsingLibrary()->showRSS(mApp->mainWindows().at(0));
+            mApp->browsingLibrary()->showRSS(mApp->windows().at(0));
         }
         break;
 

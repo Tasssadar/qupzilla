@@ -18,6 +18,7 @@
 #include "speller.h"
 #include "spellcheckdialog.h"
 #include "settings.h"
+#include "datapaths.h"
 #include "mainapplication.h"
 #include "qztools.h"
 
@@ -35,8 +36,10 @@
 
 #include <hunspell/hunspell.hxx>
 
-Speller::Speller(QObject* parent)
-    : QObject(parent)
+Q_GLOBAL_STATIC(Speller, qz_speller)
+
+Speller::Speller()
+    : QObject()
     , m_textCodec(0)
     , m_hunspell(0)
     , m_enabled(false)
@@ -62,7 +65,7 @@ void Speller::loadSettings()
     m_language.name = nameForLanguage(m_language.code);
     settings.endGroup();
 
-    m_userDictionary.setFileName(mApp->currentProfilePath() + "userdictionary.txt");
+    m_userDictionary.setFileName(DataPaths::currentProfilePath() + "/userdictionary.txt");
 
     if (m_enabled) {
         initialize();
@@ -90,7 +93,7 @@ void Speller::initialize()
     const QString affPath = dictionary + ".aff";
 
     m_hunspell = new Hunspell(affPath.toLocal8Bit().constData(),
-                              dicPath .toLocal8Bit().constData());
+                              dicPath.toLocal8Bit().constData());
 
     m_textCodec = QTextCodec::codecForName(m_hunspell->get_dic_encoding());
 
@@ -149,6 +152,22 @@ QVector<Speller::Language> Speller::availableLanguages()
 QString Speller::dictionaryPath() const
 {
     return m_dictionaryPath;
+}
+
+void Speller::createContextMenu(QMenu* menu)
+{
+    menu->addSeparator();
+
+    QAction* act = menu->addAction(tr("Check &Spelling"), this, SLOT(toggleEnableSpellChecking()));
+    act->setCheckable(true);
+    act->setChecked(m_enabled);
+
+    if (m_enabled) {
+        QMenu* men = menu->addMenu(tr("Languages"));
+        connect(men, SIGNAL(aboutToShow()), this, SLOT(populateLanguagesMenu()));
+    }
+
+    menu->addSeparator();
 }
 
 void Speller::populateContextMenu(QMenu* menu, const QWebHitTestResult &hitTest)
@@ -321,6 +340,11 @@ bool Speller::isValidWord(const QString &str)
     return false;
 }
 
+Speller* Speller::instance()
+{
+    return qz_speller();
+}
+
 void Speller::populateLanguagesMenu()
 {
     QMenu* menu = qobject_cast<QMenu*>(sender());
@@ -366,10 +390,10 @@ bool Speller::dictionaryExists(const QString &path) const
 
 QString Speller::getDictionaryPath() const
 {
-#ifdef QZ_WS_X11
+#ifdef Q_OS_UNIX
     const QString defaultDicPath = "/usr/share/hunspell/";
 #else
-    const QString defaultDicPath = mApp->DATADIR + "hunspell/";
+    const QString defaultDicPath = DataPaths::path(DataPaths::AppData) + "/hunspell/";
 #endif
 
     QString dicPath = QString::fromLocal8Bit(qgetenv("DICPATH")).trimmed();

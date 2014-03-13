@@ -20,7 +20,7 @@
 
 #include <QWidget>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 namespace Ui
 {
@@ -47,6 +47,7 @@ private slots:
     void openBookmark(BookmarkItem* item = 0);
     void openBookmarkInNewTab(BookmarkItem* item = 0);
     void openBookmarkInNewWindow(BookmarkItem* item = 0);
+    void openBookmarkInNewPrivateWindow(BookmarkItem* item = 0);
 
     void deleteBookmarks();
     void createContextMenu(const QPoint &pos);

@@ -18,7 +18,7 @@
 #ifndef ADBLOCKICON_H
 #define ADBLOCKICON_H
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 #include "clickablelabel.h"
 #include "adblockrule.h"
 
@@ -36,8 +36,6 @@ public:
 
     void popupBlocked(const QString &ruleString, const QUrl &url);
     QAction* menuAction();
-
-signals:
 
 public slots:
     void setEnabled(bool enabled);

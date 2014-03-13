@@ -76,15 +76,13 @@ void MacMenuReceiver::setDisabledSelectedMenuActions(QMenu* menu, const QList<in
 
 bool MacMenuReceiver::callSlot(const char* member, bool makeIfNoWindow, QGenericArgument val0, QGenericArgument val1)
 {
-    //qDebug("MacMenuReceiver::callSlot: \'QupZilla::%s()\'", member);
-
     BrowserWindow* qzWindow = mApp->getWindow();
     if (!qzWindow) {
         if (!makeIfNoWindow) {
             return false;
         }
         else {
-            qzWindow = mApp->makeNewWindow(Qz::BW_MacFirstWindow);
+            qzWindow = mApp->createWindow(Qz::BW_MacFirstWindow);
             mApp->processEvents();
         }
     }
@@ -92,7 +90,7 @@ bool MacMenuReceiver::callSlot(const char* member, bool makeIfNoWindow, QGeneric
     bool success = QMetaObject::invokeMethod(qzWindow, member, val0, val1);
 
     if (!success) {
-        qCritical("Warning: try to invoke \'QupZilla::%s()\' with incorrect parameter(s) or no such slot.", member);
+        qCritical("Warning: try to invoke \'BrowserWindow::%s()\' with incorrect parameter(s) or no such slot.", member);
         // this should never happen, for now:
         // we just ignore it!
     }
@@ -139,7 +137,7 @@ void MacMenuReceiver::aboutQupZilla()
 void MacMenuReceiver::addTab()
 {
     if (!callSlot("addTab")) {
-        mApp->makeNewWindow(Qz::BW_MacFirstWindow);
+        mApp->createWindow(Qz::BW_MacFirstWindow);
     }
 }
 
@@ -222,7 +220,7 @@ void MacMenuReceiver::bookmarkAllTabs()
 void MacMenuReceiver::newWindow()
 {
     if (!callSlot("newWindow")) {
-        mApp->makeNewWindow(Qz::BW_MacFirstWindow);
+        mApp->createWindow(Qz::BW_MacFirstWindow);
     }
 }
 

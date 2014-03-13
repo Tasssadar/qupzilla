@@ -61,13 +61,12 @@ void LocationCompleterModel::refreshCompletions(const QString &string)
 
     clear();
 
-    const int bookmarksLimit = 10;
-    const int historyLimit = 20;
     QList<QUrl> urlList;
     QList<QStandardItem*> itemList;
     Type showType = (Type) qzSettings->showLocationSuggestions;
 
     if (showType == HistoryAndBookmarks || showType == Bookmarks) {
+        const int bookmarksLimit = 10;
         QList<BookmarkItem*> bookmarks = mApp->bookmarks()->searchBookmarks(string, bookmarksLimit);
 
         foreach (BookmarkItem* bookmark, bookmarks) {
@@ -78,13 +77,12 @@ void LocationCompleterModel::refreshCompletions(const QString &string)
             item->setText(bookmark->url().toEncoded());
             item->setData(-1, IdRole);
             item->setData(bookmark->title(), TitleRole);
+            item->setData(bookmark->url(), UrlRole);
             item->setData(bookmark->visitCount(), CountRole);
             item->setData(QVariant(true), BookmarkRole);
+            item->setData(QVariant::fromValue<void*>(static_cast<void*>(bookmark)), BookmarkItemRole);
             item->setData(string, SearchStringRole);
-
-            if (qzSettings->showSwitchTab) {
-                item->setData(QVariant::fromValue<TabPosition>(tabPositionForUrl(bookmark->url())), TabPositionRole);
-            }
+            setTabPosition(item);
 
             urlList.append(bookmark->url());
             itemList.append(item);
@@ -92,6 +90,7 @@ void LocationCompleterModel::refreshCompletions(const QString &string)
     }
 
     if (showType == HistoryAndBookmarks || showType == History) {
+        const int historyLimit = 20;
         QSqlQuery query = createQuery(string, historyLimit);
         query.exec();
 
@@ -103,16 +102,15 @@ void LocationCompleterModel::refreshCompletions(const QString &string)
             }
 
             QStandardItem* item = new QStandardItem();
-            item->setIcon(_iconForUrl(url));
+            item->setIcon(IconProvider::iconForUrl(url));
             item->setText(url.toEncoded());
             item->setData(query.value(0), IdRole);
             item->setData(query.value(2), TitleRole);
+            item->setData(url, UrlRole);
             item->setData(query.value(3), CountRole);
             item->setData(QVariant(false), BookmarkRole);
             item->setData(string, SearchStringRole);
-            if (qzSettings->showSwitchTab) {
-                item->setData(QVariant::fromValue<TabPosition>(tabPositionForUrl(url)), TabPositionRole);
-            }
+            setTabPosition(item);
 
             itemList.append(item);
         }
@@ -135,14 +133,13 @@ void LocationCompleterModel::showMostVisited()
         QStandardItem* item = new QStandardItem();
         const QUrl url = query.value(1).toUrl();
 
-        item->setIcon(_iconForUrl(url));
+        item->setIcon(IconProvider::iconForUrl(url));
         item->setText(url.toEncoded());
         item->setData(query.value(0), IdRole);
         item->setData(query.value(2), TitleRole);
+        item->setData(url, UrlRole);
         item->setData(QVariant(false), BookmarkRole);
-        if (qzSettings->showSwitchTab) {
-            item->setData(QVariant::fromValue<TabPosition>(tabPositionForUrl(url)), TabPositionRole);
-        }
+        setTabPosition(item);
 
         appendRow(item);
     }
@@ -191,7 +188,7 @@ QString LocationCompleterModel::completeDomain(const QString &text)
     return sqlQuery.value(0).toUrl().host();
 }
 
-QSqlQuery LocationCompleterModel::createQuery(const QString &searchString, int limit, bool exactMatch)
+QSqlQuery LocationCompleterModel::createQuery(const QString &searchString, int limit, bool exactMatch) const
 {
     QStringList searchList;
     QString query = QLatin1String("SELECT id, url, title, count FROM history WHERE ");
@@ -231,42 +228,40 @@ QSqlQuery LocationCompleterModel::createQuery(const QString &searchString, int l
     return sqlQuery;
 }
 
-TabPosition LocationCompleterModel::tabPositionForUrl(const QUrl &url) const
+void LocationCompleterModel::setTabPosition(QStandardItem* item) const
 {
-    return tabPositionForEncodedUrl(url.toEncoded());
-}
+    Q_ASSERT(item);
 
-TabPosition LocationCompleterModel::tabPositionForEncodedUrl(const QString &encodedUrl) const
-{
-    QList<BrowserWindow*> windows = mApp->mainWindows();
-    int currentWindowIdx = windows.indexOf(mApp->getWindow());
-    windows.prepend(mApp->getWindow());
-    for (int win = 0; win < windows.count(); ++win) {
-        BrowserWindow* mainWin = windows.at(win);
-        QList<WebTab*> tabs = mainWin->tabWidget()->allTabs();
-        for (int tab = 0; tab < tabs.count(); ++tab) {
-            if (tabs[tab]->url().toEncoded() == encodedUrl) {
-                TabPosition pos;
-                pos.windowIndex = win == 0 ? currentWindowIdx : win - 1;
-                pos.tabIndex = tab;
-                return pos;
-            }
-        }
-    }
-    return TabPosition();
-}
-
-void LocationCompleterModel::refreshTabPositions()
-{
     if (!qzSettings->showSwitchTab) {
         return;
     }
 
-    for (int row = 0; row < rowCount(); ++row) {
-        QStandardItem* aItem = item(row);
-        if (!aItem) {
-            continue;
+    const QUrl url = item->data(UrlRole).toUrl();
+    const QList<BrowserWindow*> windows = mApp->windows();
+
+    foreach (BrowserWindow* window, windows) {
+        QList<WebTab*> tabs = window->tabWidget()->allTabs();
+        for (int i = 0; i < tabs.count(); ++i) {
+            WebTab* tab = tabs.at(i);
+            if (tab->url() == url) {
+                item->setData(QVariant::fromValue<void*>(static_cast<void*>(window)), TabPositionWindowRole);
+                item->setData(i, TabPositionTabRole);
+                return;
+            }
         }
-        aItem->setData(QVariant::fromValue<TabPosition>(tabPositionForEncodedUrl(aItem->text())), TabPositionRole);
+    }
+
+    // Tab wasn't found
+    item->setData(QVariant::fromValue<void*>(static_cast<void*>(0)), TabPositionWindowRole);
+    item->setData(-1, TabPositionTabRole);
+}
+
+void LocationCompleterModel::refreshTabPositions() const
+{
+    for (int row = 0; row < rowCount(); ++row) {
+        QStandardItem* itm = item(row);
+        if (itm) {
+            setTabPosition(itm);
+        }
     }
 }

@@ -21,12 +21,13 @@
 #include <QObject>
 #include <QVariant>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class QUrl;
 
 class BookmarkItem;
 class BookmarksModel;
+class AutoSaver;
 
 class QUPZILLA_EXPORT Bookmarks : public QObject
 {
@@ -36,7 +37,6 @@ public:
     ~Bookmarks();
 
     void loadSettings();
-    void saveSettings();
 
     bool showOnlyIconsInToolbar() const;
 
@@ -59,8 +59,7 @@ public:
     void addBookmark(BookmarkItem* parent, BookmarkItem* item);
     void insertBookmark(BookmarkItem* parent, int row, BookmarkItem* item);
     bool removeBookmark(BookmarkItem* item);
-
-    void notifyBookmarkChanged(BookmarkItem* item);
+    void changeBookmark(BookmarkItem* item);
 
 public slots:
     void setShowOnlyIconsInToolbar(bool state);
@@ -74,6 +73,9 @@ signals:
     void bookmarkChanged(BookmarkItem* item);
 
     void showOnlyIconsInToolbarChanged(bool show);
+
+private slots:
+    void saveSettings();
 
 private:
     void init();
@@ -91,9 +93,10 @@ private:
     BookmarkItem* m_folderToolbar;
     BookmarkItem* m_folderMenu;
     BookmarkItem* m_folderUnsorted;
-
     BookmarkItem* m_lastFolder;
+
     BookmarksModel* m_model;
+    AutoSaver* m_autoSaver;
 
     bool m_showOnlyIconsInToolbar;
 };

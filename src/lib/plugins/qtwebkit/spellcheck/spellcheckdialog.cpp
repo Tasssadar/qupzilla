@@ -17,10 +17,10 @@
 * ============================================================ */
 #include "spellcheckdialog.h"
 #include "ui_spellcheckdialog.h"
+#include "datapaths.h"
 #include "settings.h"
 #include "speller.h"
 #include "qztools.h"
-#include "mainapplication.h"
 
 #include <QFile>
 #include <QTextStream>
@@ -35,9 +35,9 @@ SpellCheckDialog::SpellCheckDialog(QWidget* parent)
 {
     ui->setupUi(this);
 
-    ui->dictPath->setText(mApp->speller()->dictionaryPath());
+    ui->dictPath->setText(Speller::instance()->dictionaryPath());
 
-    QFile file(mApp->currentProfilePath() + "userdictionary.txt");
+    QFile file(DataPaths::currentProfilePath() + "/userdictionary.txt");
     if (!file.open(QFile::ReadOnly)) {
         qWarning() << "SpellCheckDialog: Cannot open file" << file.fileName() << "for reading!";
     }
@@ -103,7 +103,7 @@ void SpellCheckDialog::saveSettings()
 {
     // Save only when changed
 
-    if (ui->dictPath->text() != mApp->speller()->dictionaryPath()) {
+    if (ui->dictPath->text() != Speller::instance()->dictionaryPath()) {
         Settings settings;
         settings.beginGroup("SpellCheck");
         settings.setValue("dictionaryPath", ui->dictPath->text());
@@ -114,7 +114,7 @@ void SpellCheckDialog::saveSettings()
         return;
     }
 
-    QFile file(mApp->currentProfilePath() + "userdictionary.txt");
+    QFile file(DataPaths::currentProfilePath() + "/userdictionary.txt");
     if (!file.open(QFile::WriteOnly | QFile::Truncate)) {
         qWarning() << "SpellCheckDialog: Cannot open file" << file.fileName() << "for reading!";
         return;

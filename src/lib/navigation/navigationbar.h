@@ -20,7 +20,7 @@
 
 #include <QWidget>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class QHBoxLayout;
 class QSplitter;
@@ -52,7 +52,7 @@ public:
     ToolButton* buttonAddTab() { return m_buttonAddTab; }
     ToolButton* buttonExitFullscreen() { return m_exitFullscreen; }
     ReloadStopButton* buttonReloadStop() { return m_reloadStop; }
-    WebSearchBar* searchLine() { return m_searchLine; }
+    WebSearchBar* webSearchBar() { return m_searchLine; }
     QSplitter* splitter() { return m_navigationSplitter; }
 
     void setSuperMenuVisible(bool visible);
@@ -68,6 +68,8 @@ signals:
 public slots:
     void refreshHistory();
 
+    void stop();
+    void reload();
     void goBack();
     void goBackInNewTab();
     void goForward();

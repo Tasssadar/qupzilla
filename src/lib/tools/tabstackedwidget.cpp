@@ -24,6 +24,7 @@
 #include <QStackedWidget>
 #include <QKeyEvent>
 #include <QApplication>
+#include <QTimer>
 
 // Note: just some of QTabWidget's methods were implemented
 
@@ -167,6 +168,8 @@ void TabStackedWidget::showTab(int index)
         m_stack->setCurrentIndex(index);
     }
 
+    // This is slot connected to ComboTabBar::currentChanged
+    // We must send the signal even with invalid index (-1)
     emit currentChanged(index);
 }
 
@@ -203,6 +206,7 @@ int TabStackedWidget::insertTab(int index, QWidget* w, const QString &label, boo
         index = m_stack->insertWidget(index, w);
         m_tabBar->insertTab(index, QIcon(), label, false);
     }
+    QTimer::singleShot(0, this, SLOT(setUpLayout()));
 
     return index;
 }

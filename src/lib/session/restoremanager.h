@@ -20,7 +20,7 @@
 #define RESTOREMANAGER_H
 
 #include "webtab.h"
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class QUPZILLA_EXPORT RestoreManager
 {
@@ -31,7 +31,7 @@ public:
         QVector<WebTab::SavedTab> tabsState;
     };
 
-    RestoreManager(const QString &sessionFile);
+    explicit RestoreManager();
 
     QVector<RestoreManager::WindowData> restoreData() const;
     bool isValid() const;

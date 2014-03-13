@@ -24,7 +24,7 @@
 #include <QVariant>
 #include <QNetworkRequest>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 #include "opensearchengine.h"
 
 class QWebElement;
@@ -35,7 +35,7 @@ class QUPZILLA_EXPORT SearchEnginesManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit SearchEnginesManager();
+    explicit SearchEnginesManager(QObject* parent = 0);
 
     struct Engine {
         QString name;
@@ -85,12 +85,12 @@ public:
     void setAllEngines(const QVector<Engine> &engines);
     QVector<Engine> allEngines();
 
-    static QIcon iconForSearchEngine(const QUrl &url);
-
     QString startingEngineName() { return m_startingEngineName; }
 
     void saveSettings();
     void restoreDefaults();
+
+    static QIcon iconForSearchEngine(const QUrl &url);
 
 signals:
     void enginesChanged();

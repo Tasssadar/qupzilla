@@ -136,12 +136,11 @@ void ComboTabBar::removeTab(int index)
 
         localTabBar(index)->removeTab(toLocalIndex(index));
         updatePinnedTabBarVisibility();
-
         tabRemoved(index);
         setMinimumWidths();
 
-        // Enable updates with a small delay to prevent flickering
-        QTimer::singleShot(50, this, SLOT(enableUpdates()));
+        setUpdatesEnabled(true);
+        updateTabBars();
     }
 }
 
@@ -306,12 +305,6 @@ void ComboTabBar::closeTabFromButton()
     if (tabToClose != -1) {
         emit tabCloseRequested(tabToClose + pinnedTabsCount());
     }
-}
-
-void ComboTabBar::enableUpdates()
-{
-    setUpdatesEnabled(true);
-    updateTabBars();
 }
 
 void ComboTabBar::updateTabBars()
@@ -494,7 +487,7 @@ void ComboTabBar::setUpLayout()
 
     // Workaround for Oxygen theme. For some reason, QTabBar::height() returns bigger
     // height than it actually should.
-    if (mApp->proxyStyle() && mApp->proxyStyle()->name() == QLatin1String("oxygen")) {
+    if (mApp->styleName() == QLatin1String("oxygen")) {
         height -= 4;
     }
 
@@ -720,6 +713,11 @@ void ComboTabBar::tabRemoved(int index)
     Q_UNUSED(index)
 }
 
+TabBarHelper* ComboTabBar::mainTabBar() const
+{
+    return m_mainTabBar;
+}
+
 TabBarHelper* ComboTabBar::localTabBar(int index) const
 {
     if (index < 0 || index >= pinnedTabsCount()) {
@@ -769,13 +767,20 @@ void ComboTabBar::setMinimumWidths()
                           comboTabBarPixelMetric(ExtraReservedWidth);
 
     if (mainTabBarWidth <= m_mainTabBarWidget->width()) {
+        if (m_mainBarOverFlowed) {
+            m_mainBarOverFlowed = false;
+            emit overFlowChanged(false);
+        }
+
         m_mainTabBar->useFastTabSizeHint(false);
-        emit overFlowChanged(false);
         m_mainTabBar->setMinimumWidth(mainTabBarWidth);
-        m_mainBarOverFlowed = false;
     }
     else {
-        emit overFlowChanged(true);
+        if (!m_mainBarOverFlowed) {
+            m_mainBarOverFlowed = true;
+            emit overFlowChanged(true);
+        }
+
         // The following line is the cause of calling tabSizeHint() for all tabs that is
         // time consuming, Because of this we notify application to using a lighter
         // version of it. (this is safe because all normal tabs have the same size)
@@ -783,7 +788,6 @@ void ComboTabBar::setMinimumWidths()
         if (m_mainTabBar->count() * comboTabBarPixelMetric(OverflowedTabWidth) != m_mainTabBar->minimumWidth()) {
             m_mainTabBar->setMinimumWidth(m_mainTabBar->count() * comboTabBarPixelMetric(OverflowedTabWidth));
         }
-        m_mainBarOverFlowed = true;
     }
 }
 
@@ -1062,7 +1066,7 @@ void TabBarHelper::paintEvent(QPaintEvent* event)
 void TabBarHelper::mousePressEvent(QMouseEvent* event)
 {
     event->ignore();
-    if (event->button() == Qt::LeftButton) {
+    if (event->buttons() == Qt::LeftButton) {
         m_pressedIndex = tabAt(event->pos());
         if (m_pressedIndex != -1) {
             m_pressedGlobalX = event->globalX();
@@ -1296,7 +1300,7 @@ void TabBarScrollWidget::overFlowChanged(bool overflowed)
     m_leftScrollButton->setVisible(overflowed && m_usesScrollButtons);
     m_rightScrollButton->setVisible(overflowed && m_usesScrollButtons);
 
-    // a workaround for UI issue of buttons on very fast resizing
+    // Workaround for UI issue of buttons on very fast resizing
     if (m_rightContainer->isVisible()) {
         m_rightContainer->hide();
         m_rightContainer->show();

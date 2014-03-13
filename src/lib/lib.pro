@@ -9,8 +9,8 @@ TEMPLATE = lib
 
 DEFINES *= QUPZILLA_SHAREDLIBRARY
 
-include(3rdparty/qtsingleapplication.pri)
 include(../defines.pri)
+include(3rdparty/qtsingleapplication.pri)
 include(../../translations/translations.pri)
 include(plugins/qtwebkit/qtwebkit-plugins.pri)
 
@@ -153,7 +153,6 @@ SOURCES += \
     downloads/downloadfilehelper.cpp \
     tools/certificateinfowidget.cpp \
     webview/webinspectordockwidget.cpp \
-    app/profileupdater.cpp \
     preferences/acceptlanguage.cpp \
     opensearch/opensearchreader.cpp \
     opensearch/opensearchengine.cpp \
@@ -257,7 +256,11 @@ SOURCES += \
     bookmarks/bookmarksexport/bookmarksexporter.cpp \
     bookmarks/bookmarksexport/bookmarksexportdialog.cpp \
     bookmarks/bookmarksexport/htmlexporter.cpp \
-    app/browserwindow.cpp
+    app/browserwindow.cpp \
+    history/historymenu.cpp \
+    app/datapaths.cpp \
+    app/profilemanager.cpp \
+    app/mainmenu.cpp
 
 
 HEADERS  += \
@@ -347,7 +350,6 @@ HEADERS  += \
     tools/certificateinfowidget.h \
     webview/webinspectordockwidget.h \
     3rdparty/msvc2008.h \
-    app/profileupdater.h \
     preferences/acceptlanguage.h \
     opensearch/opensearchreader.h \
     opensearch/opensearchengine.h \
@@ -382,7 +384,6 @@ HEADERS  += \
     popupwindow/popuplocationbar.h \
     webview/tabbedwebview.h \
     webview/webview.h \
-    app/qz_namespace.h \
     preferences/pluginlistdelegate.h \
     popupwindow/popupstatusbarmessage.h \
     other/licenseviewer.h \
@@ -455,7 +456,12 @@ HEADERS  += \
     bookmarks/bookmarksexport/bookmarksexporter.h \
     bookmarks/bookmarksexport/bookmarksexportdialog.h \
     bookmarks/bookmarksexport/htmlexporter.h \
-    app/browserwindow.h
+    app/browserwindow.h \
+    app/qzcommon.h \
+    history/historymenu.h \
+    app/datapaths.h \
+    app/profilemanager.h \
+    app/mainmenu.h
 
 FORMS    += \
     preferences/autofillmanager.ui \

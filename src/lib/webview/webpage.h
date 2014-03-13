@@ -22,7 +22,7 @@
 #include <QSslCertificate>
 #include <QVector>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 #include "passwordmanager.h"
 
 class QWebSecurityOrigin;
@@ -84,7 +84,6 @@ public:
     QString userAgentForUrl(const QUrl &url) const;
 
     static bool isPointerSafeToUse(WebPage* page);
-    void disconnectObjects();
 
 signals:
     void privacyChanged(bool status);

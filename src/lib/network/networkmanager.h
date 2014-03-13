@@ -21,7 +21,7 @@
 #include <QSslError>
 #include <QStringList>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 #include "networkmanagerproxy.h"
 
 class AdBlockManager;
@@ -56,8 +56,6 @@ public:
 
     bool registerSchemeHandler(const QString &scheme, SchemeHandler* handler);
     bool unregisterSchemeHandler(const QString &scheme, SchemeHandler* handler);
-
-    void disconnectObjects();
 
 signals:
     void sslDialogClosed();

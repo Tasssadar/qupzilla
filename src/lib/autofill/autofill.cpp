@@ -99,7 +99,8 @@ void AutoFill::blockStoringforUrl(const QUrl &url)
     QSqlQuery query;
     query.prepare("INSERT INTO autofill_exceptions (server) VALUES (?)");
     query.addBindValue(server);
-    mApp->dbWriter()->executeQuery(query);
+
+    DatabaseWriter::instance()->executeQuery(query);
 }
 
 QVector<PasswordEntry> AutoFill::getFormData(const QUrl &url)
@@ -201,7 +202,7 @@ QVector<PasswordEntry> AutoFill::completePage(WebPage* page)
 void AutoFill::post(const QNetworkRequest &request, const QByteArray &outgoingData)
 {
     // Don't save in private browsing
-    if (mApp->isPrivateSession()) {
+    if (mApp->isPrivate()) {
         return;
     }
 

@@ -10,7 +10,8 @@ SOURCES += statusbariconsplugin.cpp \
     sbi_proxywidget.cpp \
     sbi_networkicondialog.cpp \
     sbi_networkmanager.cpp \
-    sbi_settingsdialog.cpp
+    sbi_settingsdialog.cpp \
+    sbi_icon.cpp
 
 HEADERS += statusbariconsplugin.h \
     sbi_iconsmanager.h \
@@ -21,7 +22,8 @@ HEADERS += statusbariconsplugin.h \
     sbi_proxywidget.h \
     sbi_networkicondialog.h \
     sbi_networkmanager.h \
-    sbi_settingsdialog.h
+    sbi_settingsdialog.h \
+    sbi_icon.h
 
 RESOURCES += statusbaricons.qrc
 
@@ -47,10 +49,10 @@ TRANSLATIONS += \
     translations/pt_PT.ts \
     translations/ru_RU.ts \
     translations/sk_SK.ts \
-    translations/sr_BA@latin.ts \
-    translations/sr_BA.ts \
-    translations/sr_RS@latin.ts \
-    translations/sr_RS.ts \
+    translations/sr.ts \
+    translations/sr@ijekavian.ts \
+    translations/sr@ijekavianlatin.ts \
+    translations/sr@latin.ts \
     translations/uk_UA.ts \
     translations/uz@Cyrl.ts \
     translations/uz@Latn.ts \
@@ -62,4 +64,5 @@ FORMS += \
     sbi_networkicondialog.ui \
     sbi_settingsdialog.ui
 
+PLUGIN_DIR = $$PWD
 include(../../plugins.pri)

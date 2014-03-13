@@ -21,7 +21,7 @@
 #include <QToolButton>
 #include <QVariant>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class QUPZILLA_EXPORT ToolButton : public QToolButton
 {
@@ -63,6 +63,9 @@ signals:
     void middleMouseClicked();
     void controlClicked();
     void doubleClicked();
+
+    // Emitted when showMenuInside is true
+    void aboutToShowMenu();
 
 public slots:
     void showMenu();

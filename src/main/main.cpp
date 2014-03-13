@@ -17,6 +17,7 @@
 * ============================================================ */
 #include "mainapplication.h"
 #include "proxystyle.h"
+#include "datapaths.h"
 
 #include <QMessageBox> // For QT_REQUIRE_VERSION
 #include <iostream>
@@ -37,77 +38,65 @@
 
 void qupzilla_signal_handler(int s)
 {
-    switch (s) {
-    case SIGPIPE:
-        // When using QtWebKit 2.2 and running QupZilla with gdb, I have experienced
-        // some SIGPIPEs so far (not with other versions, only with this).
-        // But every time, QupZilla was running fine after SIGPIPE, so we are catching
-        // this signal and ignoring it to prevent unneeded crash because of it.
-
-        std::cout << "QupZilla: Caught SIGPIPE!" << std::endl;
-        break;
-
-    case SIGSEGV: {
-        static bool sigSegvServed = false;
-        if (sigSegvServed) {
-            abort();
-        }
-        sigSegvServed = true;
-
-        std::cout << "QupZilla: Crashed :( Saving backtrace in " << qPrintable(mApp->PROFILEDIR) << "crashlog ..." << std::endl;
-
-        void* array[100];
-        int size = backtrace(array, 100);
-        char** strings = backtrace_symbols(array, size);
-
-        if (size < 0 || !strings) {
-            std::cout << "Cannot get backtrace!" << std::endl;
-            abort();
-        }
-
-        QDir dir(mApp->PROFILEDIR);
-        if (!dir.exists()) {
-            std::cout << qPrintable(mApp->PROFILEDIR) << " does not exist" << std::endl;
-            abort();
-        }
-
-        if (!dir.cd("crashlog")) {
-            if (!dir.mkdir("crashlog")) {
-                std::cout << "Cannot create " << qPrintable(mApp->PROFILEDIR) << "crashlog directory!" << std::endl;
-                abort();
-            }
-
-            dir.cd("crashlog");
-        }
-
-        const QDateTime currentDateTime = QDateTime::currentDateTime();
-
-        QFile file(dir.absoluteFilePath("Crash-" + currentDateTime.toString(Qt::ISODate) + ".txt"));
-        if (!file.open(QFile::WriteOnly | QFile::Truncate)) {
-            std::cout << "Cannot open file " << qPrintable(file.fileName()) << " for writing!" << std::endl;
-            abort();
-        }
-
-        QTextStream stream(&file);
-        stream << "Time: " << currentDateTime.toString() << endl;
-        stream << "Qt version: " << qVersion() << " (compiled with " << QT_VERSION_STR << ")" << endl;
-        stream << "QupZilla version: " << Qz::VERSION << endl;
-        stream << "WebKit version: " << qWebKitVersion() << endl;
-        stream << endl;
-        stream << "============== BACKTRACE ==============" << endl;
-
-        for (int i = 0; i < size; ++i) {
-            stream << "#" << i << ": " << strings[i] << endl;
-        }
-
-        file.close();
-
-        std::cout << "Backtrace successfuly saved in " << qPrintable(dir.absoluteFilePath(file.fileName())) << std::endl;
+    if (s != SIGSEGV) {
+        return;
     }
 
-    default:
-        break;
+    static bool sigSegvServed = false;
+    if (sigSegvServed) {
+        abort();
     }
+    sigSegvServed = true;
+
+    std::cout << "QupZilla: Crashed :( Saving backtrace in " << qPrintable(DataPaths::path(DataPaths::Config)) << "crashlog ..." << std::endl;
+
+    void* array[100];
+    int size = backtrace(array, 100);
+    char** strings = backtrace_symbols(array, size);
+
+    if (size < 0 || !strings) {
+        std::cout << "Cannot get backtrace!" << std::endl;
+        abort();
+    }
+
+    QDir dir(DataPaths::path(DataPaths::Config));
+    if (!dir.exists()) {
+        std::cout << qPrintable(DataPaths::path(DataPaths::Config)) << " does not exist" << std::endl;
+        abort();
+    }
+
+    if (!dir.cd("crashlog")) {
+        if (!dir.mkdir("crashlog")) {
+            std::cout << "Cannot create " << qPrintable(DataPaths::path(DataPaths::Config)) << "crashlog directory!" << std::endl;
+            abort();
+        }
+
+        dir.cd("crashlog");
+    }
+
+    const QDateTime currentDateTime = QDateTime::currentDateTime();
+
+    QFile file(dir.absoluteFilePath("Crash-" + currentDateTime.toString(Qt::ISODate) + ".txt"));
+    if (!file.open(QFile::WriteOnly | QFile::Truncate)) {
+        std::cout << "Cannot open file " << qPrintable(file.fileName()) << " for writing!" << std::endl;
+        abort();
+    }
+
+    QTextStream stream(&file);
+    stream << "Time: " << currentDateTime.toString() << endl;
+    stream << "Qt version: " << qVersion() << " (compiled with " << QT_VERSION_STR << ")" << endl;
+    stream << "QupZilla version: " << Qz::VERSION << endl;
+    stream << "WebKit version: " << qWebKitVersion() << endl;
+    stream << endl;
+    stream << "============== BACKTRACE ==============" << endl;
+
+    for (int i = 0; i < size; ++i) {
+        stream << "#" << i << ": " << strings[i] << endl;
+    }
+
+    file.close();
+
+    std::cout << "Backtrace successfuly saved in " << qPrintable(dir.absoluteFilePath(file.fileName())) << std::endl;
 }
 #endif // defined(Q_OS_LINUX) || defined(__GLIBC__) || defined(__FreeBSD__)
 
@@ -181,10 +170,6 @@ int main(int argc, char* argv[])
     MainApplication app(argc, argv);
 
     if (app.isClosing()) {
-//        Not showing any output, otherwise XFCE shows "Failed to execute default browser. I/O error" error
-//        if (argc == 1) {
-//            std::cout << "QupZilla already running - activating existing window" << std::endl;
-//        }
         return 0;
     }
 

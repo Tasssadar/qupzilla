@@ -16,7 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
 #include "qztools.h"
-#include "mainapplication.h"
+#include "datapaths.h"
 #include "settings.h"
 
 #include <QTextDocument>
@@ -46,7 +46,7 @@
 #else
 #include <QX11Info>
 #endif
-#if defined(QZ_WS_X11) && !defined(NO_X11)
+#ifdef QZ_WS_X11
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #endif
@@ -89,7 +89,7 @@ QByteArray QzTools::readAllFileByteContents(const QString &filename)
 {
     QFile file(filename);
 
-    if (file.open(QFile::ReadOnly)) {
+    if (!filename.isEmpty() && file.open(QFile::ReadOnly)) {
         const QByteArray a = file.readAll();
         file.close();
         return a;
@@ -422,7 +422,7 @@ QIcon QzTools::iconFromFileName(const QString &fileName)
     }
 
     QFileIconProvider iconProvider;
-    QTemporaryFile tempFile(mApp->tempPath() + "/XXXXXX." + tempInfo.suffix());
+    QTemporaryFile tempFile(DataPaths::path(DataPaths::Temp) + "/XXXXXX." + tempInfo.suffix());
     tempFile.open();
     tempInfo.setFile(tempFile.fileName());
 
@@ -787,22 +787,24 @@ QString QzTools::escape(const QString &string)
 #endif
 }
 
-#if defined(QZ_WS_X11) && !defined(NO_X11)
 void* QzTools::X11Display(const QWidget* widget)
 {
     Q_UNUSED(widget)
 
+#ifdef QZ_WS_X11
 #if QT_VERSION >= 0x050000
     return qApp->platformNativeInterface()->nativeResourceForWindow("display", widget->windowHandle());
 #else
     return QX11Info::display();
 #endif
-}
 #endif
+
+    return 0;
+}
 
 void QzTools::setWmClass(const QString &name, const QWidget* widget)
 {
-#if defined(QZ_WS_X11) && !defined(NO_X11)
+#ifdef QZ_WS_X11
     QByteArray nameData = name.toUtf8();
 
     XClassHint classHint;

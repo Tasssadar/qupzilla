@@ -29,6 +29,9 @@ NetworkManagerProxy::NetworkManagerProxy(QObject* parent)
     , m_manager(0)
 {
     setCookieJar(mApp->cookieJar());
+
+    // CookieJar is shared between NetworkManagers
+    mApp->cookieJar()->setParent(0);
 }
 
 void NetworkManagerProxy::setPrimaryNetworkAccessManager(NetworkManager* manager)
@@ -53,17 +56,4 @@ QNetworkReply* NetworkManagerProxy::createRequest(QNetworkAccessManager::Operati
     }
 
     return QNetworkAccessManager::createRequest(op, request, outgoingData);
-}
-
-void NetworkManagerProxy::disconnectObjects()
-{
-    m_page = 0;
-
-    disconnect(m_manager);
-}
-
-NetworkManagerProxy::~NetworkManagerProxy()
-{
-    // Prevent deleting of cookie jar
-    cookieJar()->setParent(m_manager);
 }

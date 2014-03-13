@@ -22,7 +22,7 @@
 
 #include <QRect>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class BrowserWindow;
 class TabWidget;
@@ -43,8 +43,6 @@ public:
     void restoreTabTextColor(int index);
 
     void updatePinnedTabCloseButton(int index);
-
-    void disconnectObjects();
 
     void wheelEvent(QWheelEvent* event);
 
@@ -113,6 +111,7 @@ private:
     bool m_showTabPreviews;
     bool m_hideTabBarWithOneTab;
 
+    int m_showCloseOnInactive;
     int m_clickedTab;
 
     mutable int m_normalTabWidth;

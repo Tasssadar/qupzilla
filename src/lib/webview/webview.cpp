@@ -93,11 +93,11 @@ QIcon WebView::icon() const
     }
 
     if (url().scheme() == QLatin1String("file")) {
-        return qIconProvider->standardIcon(QStyle::SP_DriveHDIcon);
+        return IconProvider::standardIcon(QStyle::SP_DriveHDIcon);
     }
 
     if (url().scheme() == QLatin1String("ftp")) {
-        return qIconProvider->standardIcon(QStyle::SP_ComputerIcon);
+        return IconProvider::standardIcon(QStyle::SP_ComputerIcon);
     }
 
     if (!QWebView::icon().isNull()) {
@@ -108,7 +108,7 @@ QIcon WebView::icon() const
         return m_siteIcon;
     }
 
-    return _iconForUrl(url());
+    return IconProvider::iconForUrl(url());
 }
 
 QString WebView::title() const
@@ -326,6 +326,42 @@ void WebView::zoomReset()
     applyZoom();
 }
 
+void WebView::editUndo()
+{
+    triggerPageAction(QWebPage::Undo);
+}
+
+void WebView::editRedo()
+{
+    triggerPageAction(QWebPage::Redo);
+}
+
+void WebView::editCut()
+{
+    triggerPageAction(QWebPage::Cut);
+}
+
+void WebView::editCopy()
+{
+    triggerPageAction(QWebPage::Copy);
+}
+
+void WebView::editPaste()
+{
+    triggerPageAction(QWebPage::Paste);
+}
+
+void WebView::editSelectAll()
+{
+    triggerPageAction(QWebPage::SelectAll);
+}
+
+void WebView::editDelete()
+{
+    QKeyEvent ev(QEvent::KeyPress, Qt::Key_Delete, Qt::NoModifier);
+    QApplication::sendEvent(this, &ev);
+}
+
 void WebView::reload()
 {
     m_isReloading = true;
@@ -335,6 +371,11 @@ void WebView::reload()
     }
 
     QWebView::reload();
+}
+
+void WebView::reloadBypassCache()
+{
+    triggerPageAction(QWebPage::ReloadAndBypassCache);
 }
 
 void WebView::back()
@@ -359,17 +400,6 @@ void WebView::forward()
         emit urlChanged(url());
         emit iconChanged();
     }
-}
-
-void WebView::editDelete()
-{
-    QKeyEvent ev(QEvent::KeyPress, Qt::Key_Delete, Qt::NoModifier);
-    QApplication::sendEvent(this, &ev);
-}
-
-void WebView::selectAll()
-{
-    triggerPageAction(QWebPage::SelectAll);
 }
 
 void WebView::slotLoadStarted()
@@ -453,7 +483,7 @@ void WebView::slotIconChanged()
         m_siteIcon = icon();
         m_siteIconUrl = url();
 
-        qIconProvider->saveIcon(this);
+        IconProvider::instance()->saveIcon(this);
     }
 }
 
@@ -478,7 +508,7 @@ void WebView::slotUrlChanged(const QUrl &url)
 void WebView::openUrlInNewWindow()
 {
     if (QAction* action = qobject_cast<QAction*>(sender())) {
-        mApp->makeNewWindow(Qz::BW_NewWindow, action->data().toUrl());
+        mApp->createWindow(Qz::BW_NewWindow, action->data().toUrl());
     }
 }
 
@@ -521,7 +551,7 @@ void WebView::savePageAs()
     info.askWhatToDo = false;
     info.forceChoosingPath = true;
 
-    DownloadManager* dManager = mApp->downManager();
+    DownloadManager* dManager = mApp->downloadManager();
     dManager->download(request, info);
 }
 
@@ -541,7 +571,7 @@ void WebView::downloadUrlToDisk()
         info.askWhatToDo = false;
         info.forceChoosingPath = true;
 
-        DownloadManager* dManager = mApp->downManager();
+        DownloadManager* dManager = mApp->downloadManager();
         dManager->download(request, info);
     }
 }
@@ -827,8 +857,8 @@ void WebView::createContextMenu(QMenu* menu, const QWebHitTestResult &hitTest, c
         pageAction(QWebPage::ToggleItalic)->setText(tr("Italic"));
         pageAction(QWebPage::ToggleUnderline)->setText(tr("Underline"));
 
-        m_actionReload = new QAction(qIconProvider->standardIcon(QStyle::SP_BrowserReload), tr("&Reload"), this);
-        m_actionStop = new QAction(qIconProvider->standardIcon(QStyle::SP_BrowserStop), tr("S&top"), this);
+        m_actionReload = new QAction(IconProvider::standardIcon(QStyle::SP_BrowserReload), tr("&Reload"), this);
+        m_actionStop = new QAction(IconProvider::standardIcon(QStyle::SP_BrowserStop), tr("S&top"), this);
 
         connect(m_actionReload, SIGNAL(triggered()), this, SLOT(reload()));
         connect(m_actionStop, SIGNAL(triggered()), this, SLOT(stop()));
@@ -843,7 +873,7 @@ void WebView::createContextMenu(QMenu* menu, const QWebHitTestResult &hitTest, c
 #ifdef USE_HUNSPELL
     // Show spellcheck menu as the first
     if (hitTest.isContentEditable() && !hitTest.isContentSelected()) {
-        mApp->speller()->populateContextMenu(menu, hitTest);
+        Speller::instance()->populateContextMenu(menu, hitTest);
         spellCheckActionCount = menu->actions().count();
     }
 #endif
@@ -913,7 +943,9 @@ void WebView::createContextMenu(QMenu* menu, const QWebHitTestResult &hitTest, c
             checkForForm(menu, hitTest.element());
         }
 
-        createSpellCheckContextMenu(menu);
+#ifdef USE_HUNSPELL
+        Speller::instance()->createContextMenu(menu);
+#endif
     }
 
     if (!selectedText().isEmpty()) {
@@ -941,11 +973,11 @@ void WebView::createPageContextMenu(QMenu* menu, const QPoint &pos)
     QWebFrame* frameAtPos = page()->frameAt(pos);
 
     QAction* action = menu->addAction(tr("&Back"), this, SLOT(back()));
-    action->setIcon(qIconProvider->standardIcon(QStyle::SP_ArrowBack));
+    action->setIcon(IconProvider::standardIcon(QStyle::SP_ArrowBack));
     action->setEnabled(history()->canGoBack());
 
     action = menu->addAction(tr("&Forward"), this, SLOT(forward()));
-    action->setIcon(qIconProvider->standardIcon(QStyle::SP_ArrowForward));
+    action->setIcon(IconProvider::standardIcon(QStyle::SP_ArrowForward));
     action->setEnabled(history()->canGoForward());
 
     if (url() != QUrl("qupzilla:speeddial")) {
@@ -964,7 +996,7 @@ void WebView::createPageContextMenu(QMenu* menu, const QPoint &pos)
             connect(act, SIGNAL(ctrlTriggered()), this, SLOT(loadClickedFrameInBgTab()));
             frameMenu->addAction(act);
             frameMenu->addSeparator();
-            frameMenu->addAction(qIconProvider->standardIcon(QStyle::SP_BrowserReload), tr("&Reload"), this, SLOT(reloadClickedFrame()));
+            frameMenu->addAction(IconProvider::standardIcon(QStyle::SP_BrowserReload), tr("&Reload"), this, SLOT(reloadClickedFrame()));
             frameMenu->addAction(QIcon::fromTheme("document-print"), tr("Print frame"), this, SLOT(printClickedFrame()));
             frameMenu->addSeparator();
             frameMenu->addAction(QIcon::fromTheme("zoom-in"), tr("Zoom &in"), this, SLOT(clickedFrameZoomIn()));
@@ -977,13 +1009,13 @@ void WebView::createPageContextMenu(QMenu* menu, const QPoint &pos)
         }
 
         menu->addSeparator();
-        menu->addAction(qIconProvider->fromTheme("bookmark-new"), tr("Book&mark page"), this, SLOT(bookmarkLink()));
+        menu->addAction(IconProvider::iconFromTheme("bookmark-new"), tr("Book&mark page"), this, SLOT(bookmarkLink()));
         menu->addAction(QIcon::fromTheme("document-save"), tr("&Save page as..."), this, SLOT(savePageAs()));
         menu->addAction(QIcon::fromTheme("edit-copy"), tr("&Copy page link"), this, SLOT(copyLinkToClipboard()))->setData(url());
         menu->addAction(QIcon::fromTheme("mail-message-new"), tr("Send page link..."), this, SLOT(sendPageByMail()));
         menu->addAction(QIcon::fromTheme("document-print"), tr("&Print page"), this, SLOT(printPage()));
         menu->addSeparator();
-        menu->addAction(QIcon::fromTheme("edit-select-all"), tr("Select &all"), this, SLOT(selectAll()));
+        menu->addAction(QIcon::fromTheme("edit-select-all"), tr("Select &all"), this, SLOT(editSelectAll()));
         menu->addSeparator();
 
         if (url().scheme() == QLatin1String("http") || url().scheme() == QLatin1String("https")) {
@@ -1021,11 +1053,12 @@ void WebView::createLinkContextMenu(QMenu* menu, const QWebHitTestResult &hitTes
     connect(act, SIGNAL(ctrlTriggered()), this, SLOT(userDefinedOpenUrlInBgTab()));
     menu->addAction(act);
     menu->addAction(QIcon::fromTheme("window-new"), tr("Open link in new &window"), this, SLOT(openUrlInNewWindow()))->setData(hitTest.linkUrl());
+    menu->addAction(QIcon(":icons/locationbar/privatebrowsing.png"), tr("Open link in &private window"), mApp, SLOT(startPrivateBrowsing()))->setData(hitTest.linkUrl());
     menu->addSeparator();
 
     QVariantList bData;
     bData << hitTest.linkUrl() << hitTest.linkTitle();
-    menu->addAction(qIconProvider->fromTheme("bookmark-new"), tr("B&ookmark link"), this, SLOT(bookmarkLink()))->setData(bData);
+    menu->addAction(IconProvider::iconFromTheme("bookmark-new"), tr("B&ookmark link"), this, SLOT(bookmarkLink()))->setData(bData);
 
     menu->addAction(QIcon::fromTheme("document-save"), tr("&Save link as..."), this, SLOT(downloadUrlToDisk()))->setData(hitTest.linkUrl());
     menu->addAction(QIcon::fromTheme("mail-message-new"), tr("Send link..."), this, SLOT(sendLinkByMail()))->setData(hitTest.linkUrl());
@@ -1149,25 +1182,6 @@ void WebView::createMediaContextMenu(QMenu* menu, const QWebHitTestResult &hitTe
     menu->addAction(QIcon::fromTheme("edit-copy"), tr("&Copy Media Address"), this, SLOT(copyLinkToClipboard()))->setData(videoUrl);
     menu->addAction(QIcon::fromTheme("mail-message-new"), tr("&Send Media Address"), this, SLOT(sendLinkByMail()))->setData(videoUrl);
     menu->addAction(QIcon::fromTheme("document-save"), tr("Save Media To &Disk"), this, SLOT(downloadUrlToDisk()))->setData(videoUrl);
-}
-
-void WebView::createSpellCheckContextMenu(QMenu* menu)
-{
-    Q_UNUSED(menu)
-#ifdef USE_HUNSPELL
-    menu->addSeparator();
-
-    QAction* act = menu->addAction(tr("Check &Spelling"), mApp->speller(), SLOT(toggleEnableSpellChecking()));
-    act->setCheckable(true);
-    act->setChecked(mApp->speller()->isEnabled());
-
-    if (mApp->speller()->isEnabled()) {
-        QMenu* men = menu->addMenu(tr("Languages"));
-        connect(men, SIGNAL(aboutToShow()), mApp->speller(), SLOT(populateLanguagesMenu()));
-    }
-
-    menu->addSeparator();
-#endif
 }
 
 void WebView::pauseMedia()
@@ -1353,7 +1367,7 @@ void WebView::keyPressEvent(QKeyEvent* event)
 
     case Qt::Key_A:
         if (event->modifiers() == Qt::ControlModifier) {
-            selectAll();
+            editSelectAll();
             event->accept();
             return;
         }
@@ -1538,9 +1552,4 @@ bool WebView::eventFilter(QObject* obj, QEvent* event)
     }
 #endif
     return QWebView::eventFilter(obj, event);
-}
-
-void WebView::disconnectObjects()
-{
-    disconnect(this);
 }

@@ -17,9 +17,9 @@
 * ============================================================ */
 #include "thememanager.h"
 #include "ui_thememanager.h"
-#include "mainapplication.h"
 #include "qztools.h"
 #include "settings.h"
+#include "datapaths.h"
 #include "licenseviewer.h"
 #include "preferences.h"
 #include "qzregexp.h"
@@ -41,16 +41,13 @@ ThemeManager::ThemeManager(QWidget* parent, Preferences* preferences)
     m_activeTheme = settings.value("activeTheme", DEFAULT_THEME_NAME).toString();
     settings.endGroup();
 
-    QStringList themePaths;
-    themePaths << mApp->currentProfilePath() + "themes/"
-               << mApp->PROFILEDIR + "themes/"
-               << mApp->THEMESDIR;
+    const QStringList themePaths = DataPaths::allPaths(DataPaths::Themes);
 
     foreach (const QString &path, themePaths) {
         QDir dir(path);
         QStringList list = dir.entryList(QDir::AllDirs | QDir::NoDotAndDotDot);
         foreach (const QString &name, list) {
-            Theme themeInfo = parseTheme(dir.absoluteFilePath(name) + "/", name);
+            Theme themeInfo = parseTheme(dir.absoluteFilePath(name) + QLatin1Char('/'), name);
             if (!themeInfo.isValid) {
                 continue;
             }

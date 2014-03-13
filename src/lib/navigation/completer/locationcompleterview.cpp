@@ -18,12 +18,6 @@
 #include "locationcompleterview.h"
 #include "locationcompletermodel.h"
 #include "locationcompleterdelegate.h"
-#include "mainapplication.h"
-#include "browserwindow.h"
-#include "history.h"
-#include "tabwidget.h"
-#include "qzsettings.h"
-#include "tabbedwebview.h"
 
 #include <QKeyEvent>
 #include <QApplication>
@@ -45,6 +39,9 @@ LocationCompleterView::LocationCompleterView()
 
     setMouseTracking(true);
     installEventFilter(this);
+
+    m_delegate = new LocationCompleterDelegate(this);
+    setItemDelegate(m_delegate);
 }
 
 QPersistentModelIndex LocationCompleterView::hoveredIndex() const
@@ -60,31 +57,39 @@ bool LocationCompleterView::eventFilter(QObject* object, QEvent* event)
     switch (event->type()) {
     case QEvent::KeyPress: {
         QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
-        QModelIndex curIndex = m_hoveredIndex;
+        Qt::KeyboardModifiers modifiers = keyEvent->modifiers();
+        QModelIndex idx = m_hoveredIndex;
 
-        if ((keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down)
-                && currentIndex() != curIndex) {
-            setCurrentIndex(curIndex);
+        if ((keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) && currentIndex() != idx) {
+            setCurrentIndex(idx);
         }
 
         switch (keyEvent->key()) {
         case Qt::Key_Return:
         case Qt::Key_Enter:
-            if (qzSettings->showSwitchTab && !(keyEvent->modifiers() & Qt::ShiftModifier)) {
-                QModelIndex idx = selectionModel()->currentIndex();
-                if (idx.isValid()) {
-                    TabPosition pos = idx.data(LocationCompleterModel::TabPositionRole).value<TabPosition>();
-                    if (pos.windowIndex != -1) {
-                        activateTab(pos);
-                        return true;
-                    }
-                }
+            if (!idx.isValid()) {
+                break;
+            }
+
+            if (modifiers == Qt::NoModifier) {
+                emit indexActivated(idx);
+                return true;
+            }
+
+            if (modifiers == Qt::ControlModifier) {
+                emit indexCtrlActivated(idx);
+                return true;
+            }
+
+            if (modifiers == Qt::ShiftModifier) {
+                emit indexShiftActivated(idx);
+                return true;
             }
             break;
 
         case Qt::Key_End:
         case Qt::Key_Home:
-            if (keyEvent->modifiers() & Qt::ControlModifier) {
+            if (modifiers & Qt::ControlModifier) {
                 return false;
             }
             break;
@@ -94,7 +99,7 @@ bool LocationCompleterView::eventFilter(QObject* object, QEvent* event)
             return false;
 
         case Qt::Key_F4:
-            if (keyEvent->modifiers() == Qt::AltModifier)  {
+            if (modifiers == Qt::AltModifier)  {
                 close();
                 return false;
             }
@@ -109,25 +114,25 @@ bool LocationCompleterView::eventFilter(QObject* object, QEvent* event)
         }
 
         case Qt::Key_Up:
-            if (!curIndex.isValid()) {
+            if (!idx.isValid()) {
                 int rowCount = model()->rowCount();
                 QModelIndex lastIndex = model()->index(rowCount - 1, 0);
                 setCurrentIndex(lastIndex);
                 return true;
             }
-            else if (curIndex.row() == 0) {
+            else if (idx.row() == 0) {
                 setCurrentIndex(QModelIndex());
                 return true;
             }
             return false;
 
         case Qt::Key_Down:
-            if (!curIndex.isValid()) {
+            if (!idx.isValid()) {
                 QModelIndex firstIndex = model()->index(0, 0);
                 setCurrentIndex(firstIndex);
                 return true;
             }
-            else if (curIndex.row() == model()->rowCount() - 1) {
+            else if (idx.row() == model()->rowCount() - 1) {
                 setCurrentIndex(QModelIndex());
                 scrollToTop();
                 return true;
@@ -135,12 +140,8 @@ bool LocationCompleterView::eventFilter(QObject* object, QEvent* event)
             return false;
 
         case Qt::Key_Delete:
-            if (viewport()->rect().contains(visualRect(curIndex)) &&
-                    !curIndex.data(LocationCompleterModel::BookmarkRole).toBool()) {
-                int id = curIndex.data(LocationCompleterModel::IdRole).toInt();
-                model()->removeRow(curIndex.row(), curIndex.parent());
-
-                mApp->history()->deleteHistoryEntry(id);
+            if (viewport()->rect().contains(visualRect(idx))) {
+                emit indexDeleteRequested(idx);
                 return true;
             }
             break;
@@ -151,8 +152,8 @@ bool LocationCompleterView::eventFilter(QObject* object, QEvent* event)
 
         case Qt::Key_Shift:
             // don't switch if there is no hovered or selected index to not disturb typing
-            if (qzSettings->showSwitchTab && (selectionModel()->currentIndex().isValid() || m_hoveredIndex.isValid())) {
-                static_cast<LocationCompleterDelegate*>(itemDelegate())->drawSwitchToTab(false);
+            if (idx.isValid() || m_hoveredIndex.isValid()) {
+                m_delegate->setShowSwitchToTab(false);
                 viewport()->update();
                 return true;
             }
@@ -168,17 +169,15 @@ bool LocationCompleterView::eventFilter(QObject* object, QEvent* event)
 
         switch (keyEvent->key()) {
         case Qt::Key_Shift:
-            if (qzSettings->showSwitchTab) {
-                static_cast<LocationCompleterDelegate*>(itemDelegate())->drawSwitchToTab(true);
-                viewport()->update();
-                return true;
-            }
+            m_delegate->setShowSwitchToTab(true);
+            viewport()->update();
+            return true;
         }
         break;
     }
 
-
     case QEvent::Show:
+        // Don't hover item when showing completer and mouse is currently in rect
         m_ignoreNextMouseMove = true;
         break;
 
@@ -203,14 +202,13 @@ bool LocationCompleterView::eventFilter(QObject* object, QEvent* event)
 
 void LocationCompleterView::close()
 {
-    emit closed();
-    m_hoveredIndex = QPersistentModelIndex();
-
     QListView::hide();
     verticalScrollBar()->setValue(0);
-    if (qzSettings->showSwitchTab) {
-        static_cast<LocationCompleterDelegate*>(itemDelegate())->drawSwitchToTab(true);
-    }
+
+    m_hoveredIndex = QPersistentModelIndex();
+    m_delegate->setShowSwitchToTab(true);
+
+    emit closed();
 }
 
 void LocationCompleterView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
@@ -226,7 +224,6 @@ void LocationCompleterView::mouseMoveEvent(QMouseEvent* event)
 {
     if (m_ignoreNextMouseMove || !isVisible()) {
         m_ignoreNextMouseMove = false;
-
         QListView::mouseMoveEvent(event);
         return;
     }
@@ -247,34 +244,25 @@ void LocationCompleterView::mouseMoveEvent(QMouseEvent* event)
 
 void LocationCompleterView::mouseReleaseEvent(QMouseEvent* event)
 {
-    if (qzSettings->showSwitchTab && !(event->modifiers() & Qt::ShiftModifier) && m_hoveredIndex.isValid()) {
-        TabPosition pos = m_hoveredIndex.data(LocationCompleterModel::TabPositionRole).value<TabPosition>();
-        if (pos.windowIndex != -1) {
-            event->accept();
-            activateTab(pos);
-        }
-        else {
-            QListView::mouseReleaseEvent(event);
-        }
-    }
-    else {
-        QListView::mouseReleaseEvent(event);
-    }
-}
+    if (m_hoveredIndex.isValid()) {
+        Qt::MouseButton button = event->button();
+        Qt::KeyboardModifiers modifiers = event->modifiers();
 
-void LocationCompleterView::activateTab(TabPosition pos)
-{
-    BrowserWindow* win = mApp->mainWindows().at(pos.windowIndex);
-    if (mApp->getWindow() != win || mApp->getWindow()->tabWidget()->currentIndex() != pos.tabIndex) {
-        emit aboutToActivateTab(pos);
-        close();
-        win->tabWidget()->setCurrentIndex(pos.tabIndex);
-        win->show();
-        win->activateWindow();
-        win->raise();
+        if (button == Qt::LeftButton && modifiers == Qt::NoModifier) {
+            emit indexActivated(m_hoveredIndex);
+            return;
+        }
+
+        if (button == Qt::MiddleButton || (button == Qt::LeftButton && modifiers == Qt::ControlModifier)) {
+            emit indexCtrlActivated(m_hoveredIndex);
+            return;
+        }
+
+        if (button == Qt::LeftButton && modifiers == Qt::ShiftModifier) {
+            emit indexShiftActivated(m_hoveredIndex);
+            return;
+        }
     }
-    else {
-        close();
-        win->weView()->setFocus();
-    }
+
+    QListView::mouseReleaseEvent(event);
 }

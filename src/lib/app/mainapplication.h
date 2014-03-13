@@ -18,41 +18,35 @@
 #ifndef MAINAPPLICATION_H
 #define MAINAPPLICATION_H
 
-#define mApp MainApplication::getInstance()
+#define mApp MainApplication::instance()
 
 #include <QList>
-#include <QUrl>
-#include <QPointer>
 
-#include "restoremanager.h"
 #include "qtsingleapplication.h"
-#include "qz_namespace.h"
+#include "restoremanager.h"
+#include "qzcommon.h"
 
 class QMenu;
-class QWebSettings;
 class QNetworkDiskCache;
 
-class BrowserWindow;
-class CookieManager;
-class BrowsingLibrary;
 class History;
-class NetworkManager;
-class CookieJar;
-class RSSManager;
-class Updater;
-class PluginProxy;
-class Bookmarks;
-class DownloadManager;
 class AutoFill;
-class DesktopNotificationsFactory;
-class IconProvider;
-class SearchEnginesManager;
-class DatabaseWriter;
-class UserAgentManager;
+class Bookmarks;
+class CookieJar;
+class AutoSaver;
+class RSSManager;
 class ProxyStyle;
-class RegisterQAppAssociation;
+class PluginProxy;
+class CookieManager;
+class BrowserWindow;
+class NetworkManager;
+class BrowsingLibrary;
+class DownloadManager;
+class UserAgentManager;
+class SearchEnginesManager;
 class HTML5PermissionsManager;
-class Speller;
+class RegisterQAppAssociation;
+class DesktopNotificationsFactory;
 
 #ifdef Q_OS_MAC
 class MacMenuReceiver;
@@ -63,155 +57,142 @@ class QUPZILLA_EXPORT MainApplication : public QtSingleApplication
     Q_OBJECT
 
 public:
-    QString DATADIR;
-    QString PROFILEDIR;
-    QString TRANSLATIONSDIR;
-    QString THEMESDIR;
-
     explicit MainApplication(int &argc, char** argv);
     ~MainApplication();
 
-    void connectDatabase();
-    void reloadSettings();
-    bool restoreStateSlot(BrowserWindow* window, RestoreData recoveryData);
-    BrowserWindow* makeNewWindow(Qz::BrowserWindowType type, const QUrl &startUrl = QUrl());
-    void aboutToCloseWindow(BrowserWindow* window);
-    bool isStateChanged();
-
-    QList<BrowserWindow*> mainWindows();
-
-    static MainApplication* getInstance() { return static_cast<MainApplication*>(QCoreApplication::instance()); }
-
     bool isClosing() const;
     bool isRestoring() const;
-    bool isPrivateSession() const;
+    bool isPrivate() const;
     bool isPortable() const;
     bool isStartingAfterCrash() const;
-    int windowCount() const;
-    QString currentLanguageFile() const;
-    QString currentLanguage() const;
-    QString currentProfilePath() const;
 
-    bool checkSettingsDir();
+    int windowCount() const;
+    QList<BrowserWindow*> windows() const;
+
+    BrowserWindow* getWindow() const;
+    BrowserWindow* createWindow(Qz::BrowserWindowType type, const QUrl &startUrl = QUrl());
+
+    bool restoreSession(BrowserWindow* window, RestoreData restoreData);
     void destroyRestoreManager();
-    void clearTempPath();
+    void reloadSettings();
 
     ProxyStyle* proxyStyle() const;
     void setProxyStyle(ProxyStyle* style);
 
-    QString currentStyle() const;
-    QString tempPath() const;
+    // Name of current Qt style
+    QString styleName() const;
 
-    BrowserWindow* getWindow();
-    CookieManager* cookieManager();
-    BrowsingLibrary* browsingLibrary();
+    // TODO: Move translating into own class (LocaleManager ?)
+    QString currentLanguageFile() const;
+    QString currentLanguage() const;
+
     History* history();
-    QWebSettings* webSettings();
-    NetworkManager* networkManager();
-    CookieJar* cookieJar();
-    RSSManager* rssManager();
-    PluginProxy* plugins();
     Bookmarks* bookmarks();
-    DownloadManager* downManager();
+
     AutoFill* autoFill();
-    SearchEnginesManager* searchEnginesManager();
+    CookieJar* cookieJar();
+    PluginProxy* plugins();
     QNetworkDiskCache* networkCache();
+    BrowsingLibrary* browsingLibrary();
+
+    RSSManager* rssManager();
+    CookieManager* cookieManager();
+    NetworkManager* networkManager();
+    RestoreManager* restoreManager();
+    DownloadManager* downloadManager();
+    UserAgentManager* userAgentManager();
+    SearchEnginesManager* searchEnginesManager();
+    HTML5PermissionsManager* html5PermissionsManager();
     DesktopNotificationsFactory* desktopNotifications();
-    HTML5PermissionsManager* html5permissions();
-#ifdef USE_HUNSPELL
-    Speller* speller();
-#endif
 
-    DatabaseWriter* dbWriter() { return m_dbWriter; }
-    UserAgentManager* uaManager() { return m_uaManager; }
-    RestoreManager* restoreManager() { return m_restoreManager; }
-
-#if defined(Q_OS_WIN) && !defined(Q_OS_OS2)
-    RegisterQAppAssociation* associationManager();
-#endif
-
-#ifdef Q_OS_MAC
-    MacMenuReceiver* macMenuReceiver();
-    QMenu* macDockMenu();
-    bool event(QEvent* e);
-#endif
+    static MainApplication* instance();
 
 public slots:
-    bool saveStateSlot();
-    void quitApplication();
-    void sendMessages(Qz::AppMessageType mes, bool state);
-    void receiveAppMessage(QString message);
-    void setStateChanged();
     void addNewTab(const QUrl &url = QUrl());
+    void startPrivateBrowsing(const QUrl &startUrl = QUrl());
 
-    void startPrivateBrowsing();
     void reloadUserStyleSheet();
-    bool checkDefaultWebBrowser();
+    void restoreOverrideCursor();
+
+    void changeOcurred();
+    void quitApplication();
 
 signals:
-    void message(Qz::AppMessageType mes, bool state);
+    void settingsReloaded();
 
 private slots:
-    void loadSettings();
     void postLaunch();
-    void setupJumpList();
-    void restoreCursor();
 
+    void saveSession();
     void saveSettings();
 
-private:
-    enum PostLaunchAction { OpenDownloadManager, OpenNewTab, ToggleFullScreen };
+    void messageReceived(QString message);
+    void windowDestroyed(QObject* window);
 
+private:
+    enum PostLaunchAction {
+        OpenDownloadManager,
+        OpenNewTab,
+        ToggleFullScreen
+    };
+
+    void loadSettings();
     void loadTheme(const QString &name);
+
     void translateApp();
-    void restoreOtherWindows();
     void backupSavedSessions();
+    void checkDefaultWebBrowser();
 
     QUrl userStyleSheet(const QString &filePath) const;
 
-    CookieManager* m_cookiemanager;
-    BrowsingLibrary* m_browsingLibrary;
-    History* m_historymodel;
-    QWebSettings* m_websettings;
-    NetworkManager* m_networkmanager;
-    CookieJar* m_cookiejar;
-    RSSManager* m_rssmanager;
-    PluginProxy* m_plugins;
-    Bookmarks* m_bookmarks;
-    DownloadManager* m_downloadManager;
-    AutoFill* m_autofill;
-    QNetworkDiskCache* m_networkCache;
-    DesktopNotificationsFactory* m_desktopNotifications;
-    SearchEnginesManager* m_searchEnginesManager;
-    RestoreManager* m_restoreManager;
-    ProxyStyle* m_proxyStyle;
-    HTML5PermissionsManager* m_html5permissions;
-#ifdef USE_HUNSPELL
-    Speller* m_speller;
-#endif
-    DatabaseWriter* m_dbWriter;
-    UserAgentManager* m_uaManager;
-    QList<QPointer<BrowserWindow> > m_mainWindows;
-
-    QString m_activeProfil;
-    QString m_activeLanguage;
-    QString m_activeThemePath;
-
-    bool m_isPrivateSession;
+    bool m_isPrivate;
     bool m_isPortable;
     bool m_isClosing;
-    bool m_isStateChanged;
     bool m_isRestoring;
-    bool m_startingAfterCrash;
+    bool m_isStartingAfterCrash;
 
-    bool m_databaseConnected;
+    History* m_history;
+    Bookmarks* m_bookmarks;
+
+    AutoFill* m_autoFill;
+    CookieJar* m_cookieJar;
+    PluginProxy* m_plugins;
+    QNetworkDiskCache* m_networkCache;
+    BrowsingLibrary* m_browsingLibrary;
+
+    RSSManager* m_rssManager;
+    CookieManager* m_cookieManager;
+    NetworkManager* m_networkManager;
+    RestoreManager* m_restoreManager;
+    DownloadManager* m_downloadManager;
+    UserAgentManager* m_userAgentManager;
+    SearchEnginesManager* m_searchEnginesManager;
+    HTML5PermissionsManager* m_html5PermissionsManager;
+    DesktopNotificationsFactory* m_desktopNotifications;
+
+    AutoSaver* m_autoSaver;
+    ProxyStyle* m_proxyStyle;
+
+    QList<BrowserWindow*> m_windows;
     QList<PostLaunchAction> m_postLaunchActions;
 
+    QString m_languageFile;
+
 #if defined(Q_OS_WIN) && !defined(Q_OS_OS2)
+public:
+    RegisterQAppAssociation* associationManager();
+
+private:
     RegisterQAppAssociation* m_registerQAppAssociation;
 #endif
 
 #ifdef Q_OS_MAC
+public:
+    MacMenuReceiver* macMenuReceiver();
+    QMenu* macDockMenu();
+    bool event(QEvent* e);
+
+private:
     MacMenuReceiver* m_macMenuReceiver;
     QMenu* m_macDockMenu;
 #endif

@@ -40,6 +40,8 @@ BookmarksMenu::BookmarksMenu(QWidget* parent)
 
 void BookmarksMenu::setMainWindow(BrowserWindow* window)
 {
+    Q_ASSERT(window);
+
     m_window = window;
 }
 
@@ -151,7 +153,7 @@ void BookmarksMenu::init()
 
     addAction(QIcon::fromTheme("bookmark-new"), tr("Bookmark &This Page"), this, SLOT(bookmarkPage()))->setShortcut(QKeySequence("Ctrl+D"));
     addAction(QIcon::fromTheme("bookmark-new-list"), tr("Bookmark &All Tabs"), this, SLOT(bookmarkAllTabs()));
-    addAction(qIconProvider->fromTheme("bookmarks-organize"), tr("Organize &Bookmarks"), this, SLOT(showBookmarksManager()))->setShortcut(QKeySequence("Ctrl+Shift+O"));
+    addAction(IconProvider::iconFromTheme("bookmarks-organize"), tr("Organize &Bookmarks"), this, SLOT(showBookmarksManager()))->setShortcut(QKeySequence("Ctrl+Shift+O"));
     addSeparator();
 
     connect(this, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));

@@ -67,7 +67,7 @@ QDataStream &operator >>(QDataStream &stream, WebTab::SavedTab &tab)
     int version;
     stream >> version;
 
-    // FIXME: HACK to ensure backwards compatibility
+    // Hack to ensure backwards compatibility
     if (version != savedTabVersion) {
         stream.device()->seek(stream.device()->pos() - sizeof(int));
         stream >> tab.title;
@@ -378,13 +378,6 @@ void WebTab::pinTab(int index)
     index = tabWidget->pinUnPinTab(index, m_view->title());
     tabWidget->setTabText(index, m_view->title());
     tabWidget->setCurrentIndex(index);
-}
-
-void WebTab::disconnectObjects()
-{
-    disconnect(this);
-    disconnect(m_locationBar.data());
-    disconnect(m_view);
 }
 
 WebTab::~WebTab()

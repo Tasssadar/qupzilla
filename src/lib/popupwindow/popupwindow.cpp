@@ -82,9 +82,9 @@ PopupWindow::PopupWindow(PopupWebView* view)
     m_menuBar->addMenu(m_menuEdit);
 
     m_menuView = new QMenu(tr("View"));
-    m_actionStop = m_menuView->addAction(qIconProvider->standardIcon(QStyle::SP_BrowserStop), tr("&Stop"), m_view, SLOT(stop()));
+    m_actionStop = m_menuView->addAction(IconProvider::standardIcon(QStyle::SP_BrowserStop), tr("&Stop"), m_view, SLOT(stop()));
     m_actionStop->setShortcut(QKeySequence("Esc"));
-    m_actionReload = m_menuView->addAction(qIconProvider->standardIcon(QStyle::SP_BrowserReload), tr("&Reload"), m_view, SLOT(reload()));
+    m_actionReload = m_menuView->addAction(IconProvider::standardIcon(QStyle::SP_BrowserReload), tr("&Reload"), m_view, SLOT(reload()));
     m_actionReload->setShortcut(QKeySequence("F5"));
     m_menuView->addSeparator();
     m_menuView->addAction(QIcon::fromTheme("zoom-in"), tr("Zoom &In"), m_view, SLOT(zoomIn()))->setShortcut(QKeySequence("Ctrl++"));
@@ -210,7 +210,6 @@ void PopupWindow::closeEvent(QCloseEvent* event)
         return;
     }
 
-    m_page->disconnectObjects();
     m_view->deleteLater();
 
     event->accept();
@@ -218,7 +217,7 @@ void PopupWindow::closeEvent(QCloseEvent* event)
 
 void PopupWindow::editSelectAll()
 {
-    m_view->selectAll();
+    m_view->editSelectAll();
 }
 
 void PopupWindow::aboutToShowEditMenu()

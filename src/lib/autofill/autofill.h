@@ -15,12 +15,12 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
-#ifndef AUTOFILLMODEL_H
-#define AUTOFILLMODEL_H
+#ifndef AUTOFILL_H
+#define AUTOFILL_H
 
 #include <QObject>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class QUrl;
 class QWebElement;
@@ -72,4 +72,4 @@ private:
 
 };
 
-#endif // AUTOFILLMODEL_H
+#endif // AUTOFILL_H

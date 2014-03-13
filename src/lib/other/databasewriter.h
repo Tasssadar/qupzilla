@@ -22,17 +22,18 @@
 #include <QSqlQuery>
 #include <QVector>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class QUPZILLA_EXPORT DatabaseWriter : public QObject
 {
     Q_OBJECT
 public:
-    explicit DatabaseWriter(QObject* parent = 0);
+    explicit DatabaseWriter();
 
+    // Delayed execution of query
     void executeQuery(const QSqlQuery &query);
 
-signals:
+    static DatabaseWriter* instance();
 
 private slots:
     void execute();

@@ -18,37 +18,42 @@
 #ifndef COOKIEJAR_H
 #define COOKIEJAR_H
 
-#include "qz_namespace.h"
-
 #include <QFile>
 #include <QStringList>
 #include <QNetworkCookieJar>
 
-class BrowserWindow;
+#include "qzcommon.h"
+
+class AutoSaver;
 
 class QUPZILLA_EXPORT CookieJar : public QNetworkCookieJar
 {
+    Q_OBJECT
+
 public:
-    explicit CookieJar(BrowserWindow* window, QObject* parent = 0);
+    explicit CookieJar(QObject* parent = 0);
+    ~CookieJar();
 
     void loadSettings();
-    bool setCookiesFromUrl(const QList<QNetworkCookie> &cookieList, const QUrl &url);
-    QList<QNetworkCookie> getAllCookies();
-    void setAllCookies(const QList<QNetworkCookie> &cookieList);
-
-    void saveCookies();
-    void restoreCookies();
-    void clearCookies();
 
     void setAllowCookies(bool allow);
+    bool setCookiesFromUrl(const QList<QNetworkCookie> &cookieList, const QUrl &url);
 
-    static bool matchDomain(QString cookieDomain, QString siteDomain);
-    static bool listMatchesDomain(const QStringList &list, const QString &cookieDomain);
+    QList<QNetworkCookie> allCookies() const;
+    void setAllCookies(const QList<QNetworkCookie> &cookieList);
+
+    void clearCookies();
+    void restoreCookies();
+
+private slots:
+    void saveCookies();
+
+protected:
+    bool matchDomain(QString cookieDomain, QString siteDomain) const;
+    bool listMatchesDomain(const QStringList &list, const QString &cookieDomain) const;
 
 private:
     bool rejectCookie(const QString &domain, const QNetworkCookie &cookie) const;
-
-    BrowserWindow* m_window;
 
     bool m_allowCookies;
     bool m_filterTrackingCookie;
@@ -58,7 +63,7 @@ private:
     QStringList m_whitelist;
     QStringList m_blacklist;
 
-    QString m_activeProfil;
+    AutoSaver* m_autoSaver;
 };
 
 #endif // COOKIEJAR_H

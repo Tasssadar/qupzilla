@@ -27,7 +27,7 @@
 #ifndef QTWIN_H
 #define QTWIN_H
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 #include <QColor>
 #include <QWidget>
@@ -65,7 +65,7 @@ public:
     static bool isCompositionEnabled();
     static QColor colorizationColor();
 
-    static void setupJumpList();
+    static void createJumpList();
 #ifdef Q_OS_WIN
     static HWND hwndOfWidget(const QWidget* widget);
 #endif

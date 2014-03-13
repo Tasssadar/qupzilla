@@ -72,16 +72,18 @@ QList<BookmarkItem*> BookmarkItem::children() const
 
 QIcon BookmarkItem::icon()
 {
+    // Cache icon for 20 seconds
+    const int iconCacheTime = 20 * 1000;
+
     switch (m_type) {
     case Url:
-        // Cache icon for 20 seconds
-        if (m_iconTime < QTime::currentTime().addSecs(-20)) {
-            m_icon = _iconForUrl(m_url);
-            m_iconTime = QTime::currentTime();
+        if (m_iconTime.isNull() || m_iconTime.elapsed() > iconCacheTime) {
+            m_icon = IconProvider::iconForUrl(m_url);
+            m_iconTime.restart();
         }
         return m_icon;
     case Folder:
-        return qIconProvider->standardIcon(QStyle::SP_DirIcon);
+        return IconProvider::standardIcon(QStyle::SP_DirIcon);
     default:
         return QIcon();
     }
@@ -140,6 +142,11 @@ int BookmarkItem::visitCount() const
 void BookmarkItem::setVisitCount(int count)
 {
     m_visitCount = count;
+}
+
+void BookmarkItem::updateVisitCount()
+{
+    m_visitCount++;
 }
 
 bool BookmarkItem::isExpanded() const

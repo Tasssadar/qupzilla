@@ -20,13 +20,9 @@
 
 #include <QIcon>
 
-#include "clickablelabel.h"
+#include "sbi_icon.h"
 
-class QWebSettings;
-
-class BrowserWindow;
-
-class SBI_ImagesIcon : public ClickableLabel
+class SBI_ImagesIcon : public SBI_Icon
 {
     Q_OBJECT
 
@@ -41,11 +37,6 @@ private slots:
     void setGlobalLoadingImages(bool enable);
 
 private:
-    QWebSettings* currentPageSettings();
-
-    BrowserWindow* m_window;
-    QString m_settingsFile;
-
     QIcon m_icon;
     bool m_loadingImages;
 };

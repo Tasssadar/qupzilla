@@ -149,7 +149,7 @@ bool BookmarksTools::addBookmarkDialog(QWidget* parent, const QUrl &url, const Q
     label->setText(Bookmarks::tr("Choose name and location of this bookmark."));
     edit->setText(title);
     edit->setCursorPosition(0);
-    dialog->setWindowIcon(_iconForUrl(url));
+    dialog->setWindowIcon(IconProvider::iconForUrl(url));
     dialog->setWindowTitle(Bookmarks::tr("Add New Bookmark"));
 
     QSize size = dialog->size();
@@ -227,7 +227,7 @@ void BookmarksTools::openBookmark(BrowserWindow* window, BookmarkItem* item)
         openFolderInTabs(window, item);
     }
     else if (item->isUrl()) {
-        item->setVisitCount(item->visitCount() + 1);
+        item->updateVisitCount();
         window->loadAddress(item->url());
     }
 }
@@ -244,7 +244,7 @@ void BookmarksTools::openBookmarkInNewTab(BrowserWindow* window, BookmarkItem* i
         openFolderInTabs(window, item);
     }
     else if (item->isUrl()) {
-        item->setVisitCount(item->visitCount() + 1);
+        item->updateVisitCount();
         window->tabWidget()->addView(item->url(), item->title(), qzSettings->newTabPosition);
     }
 }
@@ -255,8 +255,18 @@ void BookmarksTools::openBookmarkInNewWindow(BookmarkItem* item)
         return;
     }
 
-    item->setVisitCount(item->visitCount() + 1);
-    mApp->makeNewWindow(Qz::BW_NewWindow, item->url());
+    item->updateVisitCount();
+    mApp->createWindow(Qz::BW_NewWindow, item->url());
+}
+
+void BookmarksTools::openBookmarkInNewPrivateWindow(BookmarkItem* item)
+{
+    if (!item->isUrl()) {
+        return;
+    }
+
+    item->updateVisitCount();
+    mApp->startPrivateBrowsing(item->url());
 }
 
 void BookmarksTools::openFolderInTabs(BrowserWindow* window, BookmarkItem* folder)

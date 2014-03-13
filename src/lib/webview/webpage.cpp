@@ -77,7 +77,7 @@ WebPage::WebPage(QObject* parent)
     , m_secureStatus(false)
     , m_adjustingScheduled(false)
 {
-    m_javaScriptEnabled = mApp->webSettings()->testAttribute(QWebSettings::JavascriptEnabled);
+    m_javaScriptEnabled = QWebSettings::globalSettings()->testAttribute(QWebSettings::JavascriptEnabled);
 
     m_networkProxy = new NetworkManagerProxy(this);
     m_networkProxy->setPrimaryNetworkAccessManager(mApp->networkManager());
@@ -114,6 +114,22 @@ WebPage::WebPage(QObject* parent)
 #endif
 
     s_livingPages.append(this);
+}
+
+WebPage::~WebPage()
+{
+    mApp->plugins()->emitWebPageDeleted(this);
+
+    if (m_runningLoop) {
+        m_runningLoop->exit(1);
+        m_runningLoop = 0;
+    }
+
+    s_livingPages.removeOne(this);
+
+    // Page's network manager will be deleted and then set to null
+    // Fixes issue with network manager being used after deleted in destructor
+    setNetworkAccessManager(0);
 }
 
 QUrl WebPage::url() const
@@ -323,7 +339,7 @@ void WebPage::handleUnsupportedContent(QNetworkReply* reply)
                     return;
                 }
             }
-            DownloadManager* dManager = mApp->downManager();
+            DownloadManager* dManager = mApp->downloadManager();
             dManager->handleUnsupportedContent(reply, this);
             return;
         }
@@ -378,7 +394,7 @@ void WebPage::handleUnknownProtocol(const QUrl &url)
     dialog.setText(text);
     dialog.setCheckBoxText(tr("Remember my choice for this protocol"));
     dialog.setWindowTitle(tr("External Protocol Request"));
-    dialog.setIcon(qIconProvider->standardIcon(QStyle::SP_MessageBoxQuestion));
+    dialog.setIcon(IconProvider::standardIcon(QStyle::SP_MessageBoxQuestion));
 
     switch (dialog.exec()) {
     case QDialog::Accepted:
@@ -386,6 +402,7 @@ void WebPage::handleUnknownProtocol(const QUrl &url)
             qzSettings->autoOpenProtocols.append(protocol);
             qzSettings->saveSettings();
         }
+
 
         QDesktopServices::openUrl(url);
         break;
@@ -406,10 +423,11 @@ void WebPage::handleUnknownProtocol(const QUrl &url)
 void WebPage::desktopServicesOpen(const QUrl &url)
 {
     // Open same url only once in 2 secs
+    const int sameUrlTimeout = 2 * 1000;
 
-    if (s_lastUnsupportedUrl != url || QTime::currentTime() > s_lastUnsupportedUrlTime.addSecs(2)) {
+    if (s_lastUnsupportedUrl != url || s_lastUnsupportedUrlTime.isNull() || s_lastUnsupportedUrlTime.elapsed() > sameUrlTimeout) {
         s_lastUnsupportedUrl = url;
-        s_lastUnsupportedUrlTime = QTime::currentTime();
+        s_lastUnsupportedUrlTime.restart();
         QDesktopServices::openUrl(url);
     }
     else {
@@ -420,7 +438,7 @@ void WebPage::desktopServicesOpen(const QUrl &url)
 
 void WebPage::downloadRequested(const QNetworkRequest &request)
 {
-    DownloadManager* dManager = mApp->downManager();
+    DownloadManager* dManager = mApp->downloadManager();
     dManager->download(request, this);
 }
 
@@ -458,7 +476,7 @@ void WebPage::appCacheQuotaExceeded(QWebSecurityOrigin* origin, quint64 original
 
 void WebPage::featurePermissionRequested(QWebFrame* frame, const QWebPage::Feature &feature)
 {
-    mApp->html5permissions()->requestPermissions(this, frame, feature);
+    mApp->html5PermissionsManager()->requestPermissions(this, frame, feature);
 }
 #endif // USE_QTWEBKIT_2_2
 
@@ -674,7 +692,7 @@ void WebPage::cleanBlockedObjects()
 
 QString WebPage::userAgentForUrl(const QUrl &url) const
 {
-    QString userAgent = mApp->uaManager()->userAgentForUrl(url);
+    QString userAgent = mApp->userAgentManager()->userAgentForUrl(url);
 
     if (userAgent.isEmpty()) {
         userAgent = QWebPage::userAgentForUrl(url);
@@ -844,8 +862,8 @@ bool WebPage::extension(Extension extension, const ExtensionOption* option, Exte
     QString errString = file.readAll();
     errString.replace(QLatin1String("%TITLE%"), tr("Failed loading page"));
 
-    errString.replace(QLatin1String("%IMAGE%"), QzTools::pixmapToByteArray(qIconProvider->standardIcon(QStyle::SP_MessageBoxWarning).pixmap(45, 45)));
-    errString.replace(QLatin1String("%FAVICON%"), QzTools::pixmapToByteArray(qIconProvider->standardIcon(QStyle::SP_MessageBoxWarning).pixmap(16, 16)));
+    errString.replace(QLatin1String("%IMAGE%"), QzTools::pixmapToByteArray(IconProvider::standardIcon(QStyle::SP_MessageBoxWarning).pixmap(45, 45)));
+    errString.replace(QLatin1String("%FAVICON%"), QzTools::pixmapToByteArray(IconProvider::standardIcon(QStyle::SP_MessageBoxWarning).pixmap(16, 16)));
     errString.replace(QLatin1String("%BOX-BORDER%"), QLatin1String("qrc:html/box-border.png"));
 
     QString heading2 = loadedUrl.host().isEmpty() ? tr("QupZilla can't load page.") : tr("QupZilla can't load page from %1.").arg(loadedUrl.host());
@@ -964,7 +982,7 @@ void WebPage::javaScriptAlert(QWebFrame* originatingFrame, const QString &msg)
     dialog.setWindowTitle(title);
     dialog.setText(msg);
     dialog.setCheckBoxText(tr("Prevent this page from creating additional dialogs"));
-    dialog.setIcon(qIconProvider->standardIcon(QStyle::SP_MessageBoxInformation));
+    dialog.setIcon(IconProvider::standardIcon(QStyle::SP_MessageBoxInformation));
     dialog.exec();
 
     m_blockAlerts = dialog.isChecked();
@@ -1041,29 +1059,4 @@ bool WebPage::isPointerSafeToUse(WebPage* page)
     // this hack.
 
     return page == 0 ? false : s_livingPages.contains(page);
-}
-
-void WebPage::disconnectObjects()
-{
-    if (m_runningLoop) {
-        m_runningLoop->exit(1);
-        m_runningLoop = 0;
-    }
-
-    s_livingPages.removeOne(this);
-
-    disconnect(this);
-    m_networkProxy->disconnectObjects();
-
-    mApp->plugins()->emitWebPageDeleted(this);
-}
-
-WebPage::~WebPage()
-{
-    if (m_runningLoop) {
-        m_runningLoop->exit(1);
-        m_runningLoop = 0;
-    }
-
-    s_livingPages.removeOne(this);
 }

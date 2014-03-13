@@ -21,6 +21,7 @@
 #include "cookiejar.h"
 #include "history.h"
 #include "settings.h"
+#include "datapaths.h"
 #include "mainapplication.h"
 #include "networkmanager.h"
 #include "clickablelabel.h"
@@ -38,9 +39,8 @@
 #include <QCloseEvent>
 #include <QFileInfo>
 
-ClearPrivateData::ClearPrivateData(BrowserWindow* window, QWidget* parent)
+ClearPrivateData::ClearPrivateData(QWidget* parent)
     : QDialog(parent)
-    , m_window(window)
     , ui(new Ui::ClearPrivateData)
 {
     ui->setupUi(this);
@@ -65,31 +65,31 @@ void ClearPrivateData::historyClicked(bool state)
 
 void ClearPrivateData::clearLocalStorage()
 {
-    const QString profile = mApp->currentProfilePath();
+    const QString profile = DataPaths::currentProfilePath();
 
-    QzTools::removeDir(profile + "LocalStorage");
+    QzTools::removeDir(profile + "/LocalStorage");
 }
 
 void ClearPrivateData::clearWebDatabases()
 {
-    const QString profile = mApp->currentProfilePath();
+    const QString profile = DataPaths::currentProfilePath();
 
     QWebDatabase::removeAllDatabases();
-    QzTools::removeDir(profile + "Databases");
+    QzTools::removeDir(profile + "/Databases");
 }
 
 void ClearPrivateData::clearCache()
 {
     mApp->networkCache()->clear();
-    mApp->webSettings()->clearMemoryCaches();
+    QWebSettings::globalSettings()->clearMemoryCaches();
 
-    QFile::remove(mApp->currentProfilePath() + "ApplicationCache.db");
+    QFile::remove(DataPaths::currentProfilePath() + "/ApplicationCache.db");
 }
 
 void ClearPrivateData::clearIcons()
 {
-    mApp->webSettings()->clearIconDatabase();
-    qIconProvider->clearIconDatabase();
+    QWebSettings::globalSettings()->clearIconDatabase();
+    IconProvider::instance()->clearIconsDatabase();
 }
 
 void ClearPrivateData::closeEvent(QCloseEvent* e)
@@ -174,12 +174,12 @@ void ClearPrivateData::optimizeDb()
 {
     mApp->setOverrideCursor(Qt::WaitCursor);
 
-    QString profilePath = mApp->currentProfilePath();
-    QString sizeBefore = QzTools::fileSizeToString(QFileInfo(profilePath + "browsedata.db").size());
+    const QString profilePath = DataPaths::currentProfilePath();
+    QString sizeBefore = QzTools::fileSizeToString(QFileInfo(profilePath + "/browsedata.db").size());
 
     mApp->history()->optimizeHistory();
 
-    QString sizeAfter = QzTools::fileSizeToString(QFileInfo(profilePath + "browsedata.db").size());
+    QString sizeAfter = QzTools::fileSizeToString(QFileInfo(profilePath + "/browsedata.db").size());
 
     mApp->restoreOverrideCursor();
 

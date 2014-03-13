@@ -41,10 +41,12 @@
 #include "qztools.h"
 #include "autofill.h"
 #include "settings.h"
+#include "datapaths.h"
 #include "tabbedwebview.h"
 #include "clearprivatedata.h"
 #include "useragentdialog.h"
 #include "registerqappassociation.h"
+#include "profilemanager.h"
 #include "html5permissions/html5permissionsdialog.h"
 #include "pac/pacmanager.h"
 
@@ -55,6 +57,7 @@
 #include <QCloseEvent>
 #include <QColorDialog>
 #include <QDesktopWidget>
+#include <QNetworkDiskCache>
 
 static QString createLanguageItem(const QString &lang)
 {
@@ -66,7 +69,18 @@ static QString createLanguageItem(const QString &lang)
     if (lang == QLatin1String("nqo")) {
         return QString("N'ko (nqo)");
     }
-
+    if (lang == QLatin1String("sr")) {
+        return QString::fromUtf8("српски екавски");
+    }
+    if (lang == QLatin1String("sr@ijekavian")) {
+        return QString::fromUtf8("српски ијекавски");
+    }
+    if (lang == QLatin1String("sr@latin")) {
+        return QString::fromUtf8("srpski ekavski");
+    }
+    if (lang == QLatin1String("sr@ijekavianlatin")) {
+        return QString::fromUtf8("srpski ijekavski");
+    }
     return QString("%1, %2 (%3)").arg(language, country, lang);
 }
 
@@ -177,43 +191,29 @@ Preferences::Preferences(BrowserWindow* window, QWidget* parent)
         ui->useCurrentBut->setEnabled(false);
         ui->newTabUseCurrent->setEnabled(false);
     }
-    //PROFILES
-    m_actProfileName = mApp->currentProfilePath();
-    m_actProfileName = m_actProfileName.left(m_actProfileName.length() - 1);
-    m_actProfileName = m_actProfileName.mid(m_actProfileName.lastIndexOf(QLatin1Char('/')));
-    m_actProfileName.remove(QLatin1Char('/'));
 
-    ui->activeProfile->setText("<b>" + m_actProfileName + "</b>");
+    // PROFILES
+    ProfileManager profileManager;
+    QString startingProfile = profileManager.startingProfile();
+    ui->activeProfile->setText("<b>" + profileManager.currentProfile() + "</b>");
+    ui->startProfile->addItem(startingProfile);
 
-    QSettings profileSettings(mApp->PROFILEDIR + "profiles/profiles.ini", QSettings::IniFormat);
-    QString actProfileName = profileSettings.value("Profiles/startProfile", "default").toString();
-
-    ui->startProfile->addItem(actProfileName);
-    QDir profilesDir(mApp->PROFILEDIR + "profiles/");
-    QStringList list_ = profilesDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-    foreach (const QString &name, list_) {
-        if (actProfileName == name) {
-            continue;
+    foreach (const QString &name, profileManager.availableProfiles()) {
+        if (startingProfile != name) {
+            ui->startProfile->addItem(name);
         }
-
-        ui->startProfile->addItem(name);
     }
+
     connect(ui->createProfile, SIGNAL(clicked()), this, SLOT(createProfile()));
     connect(ui->deleteProfile, SIGNAL(clicked()), this, SLOT(deleteProfile()));
-    connect(ui->startProfile, SIGNAL(currentIndexChanged(QString)), this, SLOT(startProfileIndexChanged(QString)));
-    startProfileIndexChanged(ui->startProfile->currentText());
+    connect(ui->startProfile, SIGNAL(currentIndexChanged(int)), this, SLOT(startProfileIndexChanged(int)));
+    startProfileIndexChanged(ui->startProfile->currentIndex());
 
     //APPEREANCE
     settings.beginGroup("Browser-View-Settings");
     ui->showStatusbar->setChecked(settings.value("showStatusBar", true).toBool());
-    if (m_window) {
-        ui->showBookmarksToolbar->setChecked(m_window->bookmarksToolbar()->isVisible());
-        ui->showNavigationToolbar->setChecked(m_window->navigationBar()->isVisible());
-    }
-    else {
-        ui->showBookmarksToolbar->setChecked(settings.value("showBookmarksToolbar", true).toBool());
-        ui->showNavigationToolbar->setChecked(settings.value("showNavigationToolbar", true).toBool());
-    }
+    ui->showBookmarksToolbar->setChecked(settings.value("showBookmarksToolbar", true).toBool());
+    ui->showNavigationToolbar->setChecked(settings.value("showNavigationToolbar", true).toBool());
     ui->showHome->setChecked(settings.value("showHomeButton", true).toBool());
     ui->showBackForward->setChecked(settings.value("showBackForwardButtons", true).toBool());
     ui->showAddTabButton->setChecked(settings.value("showAddTabButton", false).toBool());
@@ -234,11 +234,12 @@ Preferences::Preferences(BrowserWindow* window, QWidget* parent)
     ui->openNewEmptyTabAfterActive->setChecked(settings.value("newEmptyTabAfterActive", false).toBool());
     ui->alwaysSwitchTabsWithWheel->setChecked(settings.value("AlwaysSwitchTabsWithWheel", false).toBool());
     ui->switchToNewTabs->setChecked(settings.value("OpenNewTabsSelected", false).toBool());
-    ui->dontQuitOnTab->setChecked(settings.value("dontQuitWithOneTab", false).toBool());
+    ui->dontCloseOnLastTab->setChecked(settings.value("dontCloseWithOneTab", false).toBool());
     ui->askWhenClosingMultipleTabs->setChecked(settings.value("AskOnClosing", false).toBool());
     ui->closedInsteadOpened->setChecked(settings.value("closedInsteadOpenedTabs", false).toBool());
     ui->showTabPreviews->setChecked(settings.value("showTabPreviews", false).toBool());
     ui->animatedTabPreviews->setChecked(settings.value("tabPreviewAnimationsEnabled", true).toBool());
+    ui->showCloseOnInactive->setCurrentIndex(settings.value("showCloseOnInactiveTabs", 0).toInt());
     settings.endGroup();
 
     connect(ui->showTabPreviews, SIGNAL(toggled(bool)), this, SLOT(showTabPreviewsChanged(bool)));
@@ -295,7 +296,7 @@ Preferences::Preferences(BrowserWindow* window, QWidget* parent)
     ui->allowCache->setChecked(settings.value("AllowLocalCache", true).toBool());
     ui->cacheMB->setValue(settings.value("LocalCacheSize", 50).toInt());
     ui->MBlabel->setText(settings.value("LocalCacheSize", 50).toString() + " MB");
-    ui->cachePath->setText(settings.value("CachePath", QString("%1networkcache/").arg(mApp->currentProfilePath())).toString());
+    ui->cachePath->setText(settings.value("CachePath", mApp->networkCache()->cacheDirectory()).toString());
     connect(ui->allowCache, SIGNAL(clicked(bool)), this, SLOT(allowCacheChanged(bool)));
     connect(ui->cacheMB, SIGNAL(valueChanged(int)), this, SLOT(cacheValueChanged(int)));
     connect(ui->changeCachePath, SIGNAL(clicked()), this, SLOT(changeCachePathClicked()));
@@ -321,7 +322,7 @@ Preferences::Preferences(BrowserWindow* window, QWidget* parent)
     ui->deleteHtml5storageOnClose->setChecked(settings.value("deleteHTML5StorageOnClose", false).toBool());
     connect(ui->html5storage, SIGNAL(toggled(bool)), this, SLOT(allowHtml5storageChanged(bool)));
     // Other
-    ui->doNotTrack->setChecked(settings.value("DoNotTrack", false).toBool());
+    ui->doNotTrack->setChecked(settings.value("DoNotTrack", true).toBool());
     ui->sendReferer->setChecked(settings.value("SendReferer", true).toBool());
 
     //CSS Style
@@ -354,17 +355,18 @@ Preferences::Preferences(BrowserWindow* window, QWidget* parent)
 
     //FONTS
     settings.beginGroup("Browser-Fonts");
-    ui->fontStandard->setCurrentFont(QFont(settings.value("StandardFont", mApp->webSettings()->fontFamily(QWebSettings::StandardFont)).toString()));
-    ui->fontCursive->setCurrentFont(QFont(settings.value("CursiveFont", mApp->webSettings()->fontFamily(QWebSettings::CursiveFont)).toString()));
-    ui->fontFantasy->setCurrentFont(QFont(settings.value("FantasyFont", mApp->webSettings()->fontFamily(QWebSettings::FantasyFont)).toString()));
-    ui->fontFixed->setCurrentFont(QFont(settings.value("FixedFont", mApp->webSettings()->fontFamily(QWebSettings::FixedFont)).toString()));
-    ui->fontSansSerif->setCurrentFont(QFont(settings.value("SansSerifFont", mApp->webSettings()->fontFamily(QWebSettings::SansSerifFont)).toString()));
-    ui->fontSerif->setCurrentFont(QFont(settings.value("SerifFont", mApp->webSettings()->fontFamily(QWebSettings::SerifFont)).toString()));
+    QWebSettings* webSettings = QWebSettings::globalSettings();
+    ui->fontStandard->setCurrentFont(QFont(settings.value("StandardFont", webSettings->fontFamily(QWebSettings::StandardFont)).toString()));
+    ui->fontCursive->setCurrentFont(QFont(settings.value("CursiveFont", webSettings->fontFamily(QWebSettings::CursiveFont)).toString()));
+    ui->fontFantasy->setCurrentFont(QFont(settings.value("FantasyFont", webSettings->fontFamily(QWebSettings::FantasyFont)).toString()));
+    ui->fontFixed->setCurrentFont(QFont(settings.value("FixedFont", webSettings->fontFamily(QWebSettings::FixedFont)).toString()));
+    ui->fontSansSerif->setCurrentFont(QFont(settings.value("SansSerifFont", webSettings->fontFamily(QWebSettings::SansSerifFont)).toString()));
+    ui->fontSerif->setCurrentFont(QFont(settings.value("SerifFont", webSettings->fontFamily(QWebSettings::SerifFont)).toString()));
 
-    ui->sizeDefault->setValue(settings.value("DefaultFontSize", mApp->webSettings()->fontSize(QWebSettings::DefaultFontSize)).toInt());
-    ui->sizeFixed->setValue(settings.value("FixedFontSize", mApp->webSettings()->fontSize(QWebSettings::DefaultFixedFontSize)).toInt());
-    ui->sizeMinimum->setValue(settings.value("MinimumFontSize", mApp->webSettings()->fontSize(QWebSettings::MinimumFontSize)).toInt());
-    ui->sizeMinimumLogical->setValue(settings.value("MinimumLogicalFontSize", mApp->webSettings()->fontSize(QWebSettings::MinimumLogicalFontSize)).toInt());
+    ui->sizeDefault->setValue(settings.value("DefaultFontSize", webSettings->fontSize(QWebSettings::DefaultFontSize)).toInt());
+    ui->sizeFixed->setValue(settings.value("FixedFontSize", webSettings->fontSize(QWebSettings::DefaultFixedFontSize)).toInt());
+    ui->sizeMinimum->setValue(settings.value("MinimumFontSize", webSettings->fontSize(QWebSettings::MinimumFontSize)).toInt());
+    ui->sizeMinimumLogical->setValue(settings.value("MinimumLogicalFontSize", webSettings->fontSize(QWebSettings::MinimumLogicalFontSize)).toInt());
     settings.endGroup();
 
     //KEYBOARD SHORTCUTS
@@ -379,7 +381,7 @@ Preferences::Preferences(BrowserWindow* window, QWidget* parent)
     DesktopNotificationsFactory::Type notifyType;
     settings.beginGroup("Notifications");
     ui->notificationTimeout->setValue(settings.value("Timeout", 6000).toInt() / 1000);
-#ifdef QZ_WS_X11
+#if defined(Q_OS_UNIX) && !defined(DISABLE_DBUS)
     notifyType = settings.value("UseNativeDesktop", true).toBool() ? DesktopNotificationsFactory::DesktopNative : DesktopNotificationsFactory::PopupWidget;
 #else
     notifyType = DesktopNotificationsFactory::PopupWidget;
@@ -408,21 +410,25 @@ Preferences::Preferences(BrowserWindow* window, QWidget* parent)
 
     ui->languages->addItem("English (en_US)");
 
-    QDir lanDir(mApp->TRANSLATIONSDIR);
-    QStringList list = lanDir.entryList(QStringList("*.qm"));
-    foreach (const QString &name, list) {
-        if (name.startsWith(QLatin1String("qt_"))) {
-            continue;
+    const QStringList translationPaths = DataPaths::allPaths(DataPaths::Translations);
+
+    foreach (const QString &path, translationPaths) {
+        QDir lanDir(path);
+        QStringList list = lanDir.entryList(QStringList("*.qm"));
+        foreach (const QString &name, list) {
+            if (name.startsWith(QLatin1String("qt_"))) {
+                continue;
+            }
+
+            QString loc = name;
+            loc.remove(QLatin1String(".qm"));
+
+            if (loc == activeLanguage) {
+                continue;
+            }
+
+            ui->languages->addItem(createLanguageItem(loc), loc);
         }
-
-        QString loc = name;
-        loc.remove(QLatin1String(".qm"));
-
-        if (loc == activeLanguage) {
-            continue;
-        }
-
-        ui->languages->addItem(createLanguageItem(loc), loc);
     }
 
     // Proxy Configuration
@@ -788,30 +794,26 @@ void Preferences::createProfile()
 {
     QString name = QInputDialog::getText(this, tr("New Profile"), tr("Enter the new profile's name:"));
     name = QzTools::filterCharsFromFilename(name);
+
     if (name.isEmpty()) {
         return;
     }
-    QDir dir(mApp->PROFILEDIR + "profiles/");
-    if (QDir(dir.absolutePath() + "/" + name).exists()) {
+
+    ProfileManager profileManager;
+    int res = profileManager.createProfile(name);
+
+    if (res == -1) {
         QMessageBox::warning(this, tr("Error!"), tr("This profile already exists!"));
         return;
     }
-    if (!dir.mkdir(name)) {
+
+    if (res != 0) {
         QMessageBox::warning(this, tr("Error!"), tr("Cannot create profile directory!"));
         return;
     }
 
-    dir.cd(name);
-    QFile(":data/browsedata.db").copy(dir.absolutePath() + "/browsedata.db");
-    QFile(dir.absolutePath() + "/browsedata.db").setPermissions(QFile::ReadUser | QFile::WriteUser);
-
-    QFile versionFile(dir.absolutePath() + "/version");
-    versionFile.open(QFile::WriteOnly);
-    versionFile.write(Qz::VERSION.toUtf8());
-    versionFile.close();
-
-    ui->startProfile->insertItem(0, name);
-    ui->startProfile->setCurrentIndex(0);
+    ui->startProfile->addItem(name);
+    ui->startProfile->setCurrentIndex(ui->startProfile->count() - 1);
 }
 
 void Preferences::deleteProfile()
@@ -823,15 +825,19 @@ void Preferences::deleteProfile()
         return;
     }
 
-    QzTools::removeDir(mApp->PROFILEDIR + "profiles/" + name);
+    ProfileManager profileManager;
+    profileManager.removeProfile(name);
+
     ui->startProfile->removeItem(ui->startProfile->currentIndex());
 }
 
-void Preferences::startProfileIndexChanged(QString index)
+void Preferences::startProfileIndexChanged(int index)
 {
-    ui->deleteProfile->setEnabled(m_actProfileName != index);
+    // Index 0 is current profile
 
-    if (m_actProfileName == index) {
+    ui->deleteProfile->setEnabled(index != 0);
+
+    if (index == 0) {
         ui->cannotDeleteActiveProfileLabel->setText(tr("Note: You cannot delete active profile."));
     }
     else {
@@ -909,11 +915,12 @@ void Preferences::saveSettings()
     settings.setValue("newEmptyTabAfterActive", ui->openNewEmptyTabAfterActive->isChecked());
     settings.setValue("AlwaysSwitchTabsWithWheel", ui->alwaysSwitchTabsWithWheel->isChecked());
     settings.setValue("OpenNewTabsSelected", ui->switchToNewTabs->isChecked());
-    settings.setValue("dontQuitWithOneTab", ui->dontQuitOnTab->isChecked());
+    settings.setValue("dontCloseWithOneTab", ui->dontCloseOnLastTab->isChecked());
     settings.setValue("AskOnClosing", ui->askWhenClosingMultipleTabs->isChecked());
     settings.setValue("closedInsteadOpenedTabs", ui->closedInsteadOpened->isChecked());
     settings.setValue("showTabPreviews", ui->showTabPreviews->isChecked());
     settings.setValue("tabPreviewAnimationsEnabled", ui->animatedTabPreviews->isChecked());
+    settings.setValue("showCloseOnInactiveTabs", ui->showCloseOnInactive->currentIndex());
     settings.endGroup();
 
     //DOWNLOADS
@@ -1068,9 +1075,8 @@ void Preferences::saveSettings()
     settings.setValue("ProxyExceptions", ui->proxyExceptions->text().split(QLatin1Char(','), QString::SkipEmptyParts));
     settings.endGroup();
 
-    //Profiles
-    QSettings profileSettings(mApp->PROFILEDIR + "profiles/profiles.ini", QSettings::IniFormat);
-    profileSettings.setValue("Profiles/startProfile", ui->startProfile->currentText());
+    ProfileManager profileManager;
+    profileManager.setStartingProfile(ui->startProfile->currentText());
 
     m_pluginsList->save();
     m_themesManager->save();

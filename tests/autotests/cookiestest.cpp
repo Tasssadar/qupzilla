@@ -16,9 +16,23 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
 #include "cookiestest.h"
-#include "cookiejar.h"
+#include "datapaths.h"
+#include "settings.h"
 
 #include <QtTest/QtTest>
+#include <QDir>
+
+void CookiesTest::initTestCase()
+{
+    DataPaths::setCurrentProfilePath(QDir::tempPath() + "qz-test");
+    Settings::createSettings(QDir::tempPath() + "qz-test/settings.ini");
+    m_cookieJar = new CookieJar_Tst;
+}
+
+void CookiesTest::cleanupTestCase()
+{
+    delete m_cookieJar;
+}
 
 void CookiesTest::domainMatchingTest_data()
 {
@@ -50,7 +64,7 @@ void CookiesTest::domainMatchingTest()
     QFETCH(QString, siteDomain);
     QFETCH(bool, result);
 
-    QCOMPARE(CookieJar::matchDomain(cookieDomain, siteDomain), result);
+    QCOMPARE(m_cookieJar->matchDomain(cookieDomain, siteDomain), result);
 }
 
 void CookiesTest::listMatchesDomainTest_data()
@@ -82,5 +96,5 @@ void CookiesTest::listMatchesDomainTest()
     QFETCH(QString, cookieDomain);
     QFETCH(bool, result);
 
-    QCOMPARE(CookieJar::listMatchesDomain(list, cookieDomain), result);
+    QCOMPARE(m_cookieJar->listMatchesDomain(list, cookieDomain), result);
 }

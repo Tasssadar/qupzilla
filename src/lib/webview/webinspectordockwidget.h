@@ -23,7 +23,7 @@
 #include <QPointer>
 #include <QHash>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class QUPZILLA_EXPORT WebInspector : public QWebInspector
 {
@@ -49,7 +49,7 @@ public:
 signals:
 
 public slots:
-    void tabChanged();
+    void tabChanged(int index);
 
     void close();
     void show();

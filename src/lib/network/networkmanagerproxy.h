@@ -20,7 +20,7 @@
 
 #include <QNetworkAccessManager>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class WebPage;
 class NetworkManager;
@@ -29,14 +29,11 @@ class QUPZILLA_EXPORT NetworkManagerProxy : public QNetworkAccessManager
 {
 public:
     explicit NetworkManagerProxy(QObject* parent = 0);
-    ~NetworkManagerProxy();
 
     void setPage(WebPage* page) { m_page = page; }
     void setPrimaryNetworkAccessManager(NetworkManager* manager);
 
     QNetworkReply* createRequest(QNetworkAccessManager::Operation op, const QNetworkRequest &request, QIODevice* outgoingData);
-
-    void disconnectObjects();
 
 private:
     WebPage* m_page;

@@ -18,7 +18,7 @@
 #ifndef TABBEDWEBVIEW_H
 #define TABBEDWEBVIEW_H
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 #include "webview.h"
 
 class QLabel;
@@ -49,7 +49,6 @@ public:
     void moveToWindow(BrowserWindow* window);
 
     QWidget* overlayForJsAlert();
-    void disconnectObjects();
 
 signals:
     void wantsCloseTab(int);
@@ -74,7 +73,6 @@ public slots:
     void openNewTab();
 
 private slots:
-    void trackMouse(bool state) { m_mouseTrack = state; }
     void slotLoadFinished();
     void urlChanged(const QUrl &url);
     void linkHovered(const QString &link, const QString &title, const QString &content);
@@ -93,7 +91,6 @@ private:
     Menu* m_menu;
 
     QString m_currentIp;
-    bool m_mouseTrack;
 
 };
 

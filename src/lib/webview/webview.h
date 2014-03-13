@@ -21,7 +21,7 @@
 #include <QWebView>
 #include <QWebElement>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class WebPage;
 
@@ -38,6 +38,7 @@ public:
     WebPage* page() const;
     void setPage(QWebPage* page);
 
+    void load(const QUrl &url);
     void load(const QNetworkRequest &request,
               QNetworkAccessManager::Operation operation = QNetworkAccessManager::GetOperation,
               const QByteArray &body = QByteArray());
@@ -58,7 +59,6 @@ public:
     bool eventFilter(QObject* obj, QEvent* event);
 
     virtual QWidget* overlayForJsAlert() = 0;
-    virtual void disconnectObjects();
 
     static bool isUrlValid(const QUrl &url);
     static QUrl guessUrlFromString(const QString &string);
@@ -74,14 +74,20 @@ public slots:
     void zoomOut();
     void zoomReset();
 
-    void load(const QUrl &url);
+    void editUndo();
+    void editRedo();
+    void editCut();
+    void editCopy();
+    void editPaste();
+    void editSelectAll();
+    void editDelete();
+
     void reload();
+    void reloadBypassCache();
 
     void back();
     void forward();
 
-    void editDelete();
-    void selectAll();
     void printPage(QWebFrame* frame = 0);
     void sendPageByMail();
     void savePageAs();
@@ -155,7 +161,6 @@ protected:
     void createImageContextMenu(QMenu* menu, const QWebHitTestResult &hitTest);
     void createSelectedTextContextMenu(QMenu* menu, const QWebHitTestResult &hitTest);
     void createMediaContextMenu(QMenu* menu, const QWebHitTestResult &hitTest);
-    void createSpellCheckContextMenu(QMenu* menu);
 
 private slots:
     void pauseMedia();

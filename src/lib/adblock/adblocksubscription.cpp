@@ -47,6 +47,7 @@
 #include "adblocksearchtree.h"
 #include "mainapplication.h"
 #include "networkmanager.h"
+#include "datapaths.h"
 #include "qztools.h"
 #include "followredirectreply.h"
 
@@ -301,7 +302,7 @@ QString AdBlockSubscription::elementHidingRulesForDomain(const QString &domain) 
 
 const AdBlockRule* AdBlockSubscription::rule(int offset) const
 {
-    if (!QzTools::vectorContainsIndex(m_rules, offset)) {
+    if (!QzTools::containsIndex(m_rules, offset)) {
         return 0;
     }
 
@@ -315,7 +316,7 @@ QVector<AdBlockRule*> AdBlockSubscription::allRules() const
 
 const AdBlockRule* AdBlockSubscription::enableRule(int offset)
 {
-    if (!QzTools::vectorContainsIndex(m_rules, offset)) {
+    if (!QzTools::containsIndex(m_rules, offset)) {
         return 0;
     }
 
@@ -333,7 +334,7 @@ const AdBlockRule* AdBlockSubscription::enableRule(int offset)
 
 const AdBlockRule* AdBlockSubscription::disableRule(int offset)
 {
-    if (!QzTools::vectorContainsIndex(m_rules, offset)) {
+    if (!QzTools::containsIndex(m_rules, offset)) {
         return 0;
     }
 
@@ -457,7 +458,7 @@ AdBlockSubscription::~AdBlockSubscription()
 AdBlockCustomList::AdBlockCustomList(QObject* parent)
     : AdBlockSubscription(tr("Custom Rules"), parent)
 {
-    setFilePath(mApp->currentProfilePath() + "adblock/customlist.txt");
+    setFilePath(DataPaths::currentProfilePath() + QLatin1String("/adblock/customlist.txt"));
 }
 
 void AdBlockCustomList::saveSubscription()
@@ -528,7 +529,7 @@ int AdBlockCustomList::addRule(AdBlockRule* rule)
 
 bool AdBlockCustomList::removeRule(int offset)
 {
-    if (!QzTools::vectorContainsIndex(m_rules, offset)) {
+    if (!QzTools::containsIndex(m_rules, offset)) {
         return false;
     }
 
@@ -548,7 +549,7 @@ bool AdBlockCustomList::removeRule(int offset)
 
 const AdBlockRule* AdBlockCustomList::replaceRule(AdBlockRule* rule, int offset)
 {
-    if (!QzTools::vectorContainsIndex(m_rules, offset)) {
+    if (!QzTools::containsIndex(m_rules, offset)) {
         return 0;
     }
 

@@ -47,6 +47,7 @@ TabBar::TabBar(BrowserWindow* window, TabWidget* tabWidget)
     , m_tabPreview(new TabPreview(window, window))
     , m_showTabPreviews(false)
     , m_hideTabBarWithOneTab(false)
+    , m_showCloseOnInactive(0)
     , m_clickedTab(0)
     , m_normalTabWidth(0)
     , m_activeTabWidth(0)
@@ -54,13 +55,13 @@ TabBar::TabBar(BrowserWindow* window, TabWidget* tabWidget)
     setObjectName("tabbar");
     setContextMenuPolicy(Qt::CustomContextMenu);
     setElideMode(Qt::ElideRight);
-    setDocumentMode(true);
     setFocusPolicy(Qt::NoFocus);
-    setTabsClosable(true);
+    setTabsClosable(false);
     setMouseTracking(true);
-    setMovable(true);
-
+    setDocumentMode(true);
     setAcceptDrops(true);
+    setDrawBase(false);
+    setMovable(true);
 
     setStyleSheet(
         "QTabBar::tab { border: 1px solid #333; background: #FFF; padding: 5px 1px 5px 1px; margin: 0 1px 0 1px; border-radius: 5px;}"
@@ -95,6 +96,7 @@ void TabBar::loadSettings()
     m_tabPreview->setAnimationsEnabled(settings.value("tabPreviewAnimationsEnabled", true).toBool());
     m_showTabPreviews = settings.value("showTabPreviews", false).toBool();
     bool activateLastTab = settings.value("ActivateLastTabWhenClosingActual", false).toBool();
+    m_showCloseOnInactive = settings.value("showCloseOnInactiveTabs", 0).toInt(0);
     settings.endGroup();
 
     setSelectionBehaviorOnRemove(activateLastTab ? QTabBar::SelectPreviousTab : QTabBar::SelectRightTab);
@@ -163,10 +165,10 @@ void TabBar::contextMenuRequested(const QPoint &position)
         }
 
         if (m_window->weView(m_clickedTab)->isLoading()) {
-            menu.addAction(qIconProvider->standardIcon(QStyle::SP_BrowserStop), tr("&Stop Tab"), this, SLOT(stopTab()));
+            menu.addAction(IconProvider::standardIcon(QStyle::SP_BrowserStop), tr("&Stop Tab"), this, SLOT(stopTab()));
         }
         else {
-            menu.addAction(qIconProvider->standardIcon(QStyle::SP_BrowserReload), tr("&Reload Tab"), this, SLOT(reloadTab()));
+            menu.addAction(IconProvider::standardIcon(QStyle::SP_BrowserReload), tr("&Reload Tab"), this, SLOT(reloadTab()));
         }
 
         menu.addAction(QIcon::fromTheme("tab-duplicate"), tr("&Duplicate Tab"), this, SLOT(duplicateTab()));
@@ -181,9 +183,7 @@ void TabBar::contextMenuRequested(const QPoint &position)
         menu.addAction(tr("&Bookmark This Tab"), this, SLOT(bookmarkTab()));
         menu.addAction(tr("Bookmark &All Tabs"), m_window, SLOT(bookmarkAllTabs()));
         menu.addSeparator();
-        QAction* action = m_window->actionRestoreTab();
-        action->setEnabled(m_tabWidget->canRestoreTab());
-        menu.addAction(action);
+        menu.addAction(m_window->action(QSL("Other/RestoreClosedTab")));
         menu.addSeparator();
         menu.addAction(tr("Close Ot&her Tabs"), this, SLOT(closeAllButCurrent()));
         menu.addAction(QIcon::fromTheme("window-close"), tr("Cl&ose"), this, SLOT(closeTab()));
@@ -193,16 +193,17 @@ void TabBar::contextMenuRequested(const QPoint &position)
         menu.addAction(tr("Reloa&d All Tabs"), m_tabWidget, SLOT(reloadAllTabs()));
         menu.addAction(tr("Bookmark &All Tabs"), m_window, SLOT(bookmarkAllTabs()));
         menu.addSeparator();
-        QAction* action = menu.addAction(QIcon::fromTheme("user-trash"), tr("Restore &Closed Tab"), m_tabWidget, SLOT(restoreClosedTab()));
-        action->setEnabled(m_tabWidget->canRestoreTab());
+        menu.addAction(m_window->action(QSL("Other/RestoreClosedTab")));
     }
+
+    m_window->action(QSL("Other/RestoreClosedTab"))->setEnabled(m_tabWidget->canRestoreTab());
 
     // Prevent choosing first option with double rightclick
     const QPoint pos = mapToGlobal(position);
     QPoint p(pos.x(), pos.y() + 1);
     menu.exec(p);
 
-    m_window->actionRestoreTab()->setEnabled(true);
+    m_window->action(QSL("Other/RestoreClosedTab"))->setEnabled(true);
 }
 
 void TabBar::closeAllButCurrent()
@@ -274,9 +275,14 @@ QSize TabBar::tabSizeHint(int index, bool fast) const
 
             bool tryAdjusting = availableWidth >= MINIMUM_TAB_WIDTH * normalTabsCount;
 
-            if (tabsClosable() && availableWidth < (MINIMUM_TAB_WIDTH + 25) * normalTabsCount) {
+            if (m_showCloseOnInactive != 1 && tabsClosable() && availableWidth < (MINIMUM_TAB_WIDTH + 25) * normalTabsCount) {
                 // Hiding close buttons to save some space
                 tabBar->setTabsClosable(false);
+                tabBar->showCloseButton(currentIndex());
+            }
+            if (m_showCloseOnInactive == 1) {
+                // Always showing close buttons
+                tabBar->setTabsClosable(true);
                 tabBar->showCloseButton(currentIndex());
             }
 
@@ -301,7 +307,7 @@ QSize TabBar::tabSizeHint(int index, bool fast) const
         }
 
         // Restore close buttons according to preferences
-        if (!tabsClosable() && availableWidth >= (MINIMUM_TAB_WIDTH + 25) * normalTabsCount) {
+        if (m_showCloseOnInactive != 2 && !tabsClosable() && availableWidth >= (MINIMUM_TAB_WIDTH + 25) * normalTabsCount) {
             tabBar->setTabsClosable(true);
 
             // Hide close buttons on pinned tabs
@@ -570,7 +576,7 @@ void TabBar::mouseDoubleClickEvent(QMouseEvent* event)
         return;
     }
 
-    if (event->button() == Qt::LeftButton && tabAt(event->pos()) == -1) {
+    if (event->buttons() == Qt::LeftButton && tabAt(event->pos()) == -1) {
         m_tabWidget->addView(QUrl(), Qz::NT_SelectedTabAtTheEnd, true);
         return;
     }
@@ -586,7 +592,7 @@ void TabBar::mousePressEvent(QMouseEvent* event)
         return;
     }
 
-    if (event->buttons() & Qt::LeftButton && tabAt(event->pos()) != -1) {
+    if (event->buttons() == Qt::LeftButton && tabAt(event->pos()) != -1) {
         m_dragStartPosition = mapFromGlobal(event->globalPos());
     }
     else {
@@ -744,9 +750,4 @@ void TabBar::dropEvent(QDropEvent* event)
             tab->view()->load(mime->urls().at(0));
         }
     }
-}
-
-void TabBar::disconnectObjects()
-{
-    disconnect(this);
 }

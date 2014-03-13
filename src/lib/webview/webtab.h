@@ -23,7 +23,7 @@
 #include <QIcon>
 #include <QUrl>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class QVBoxLayout;
 class QWebHistory;
@@ -94,8 +94,6 @@ public:
     void p_restoreTab(const QUrl &url, const QByteArray &history);
 
     QPixmap renderTabPreview();
-
-    void disconnectObjects();
 
 private slots:
     void showNotification(QWidget* notif);

@@ -56,7 +56,7 @@ QString NavigationBar::titleForUrl(QString title, const QUrl &url)
 QIcon NavigationBar::iconForPage(const QUrl &url, const QIcon &sIcon)
 {
     QIcon icon;
-    icon.addPixmap(url.scheme() == QLatin1String("qupzilla") ? QIcon(":icons/qupzilla.png").pixmap(16, 16) : _iconForUrl(url).pixmap(16, 16));
+    icon.addPixmap(url.scheme() == QLatin1String("qupzilla") ? QIcon(":icons/qupzilla.png").pixmap(16, 16) : IconProvider::iconForUrl(url).pixmap(16, 16));
     icon.addPixmap(sIcon.pixmap(16, 16), QIcon::Active);
     return icon;
 }
@@ -182,8 +182,8 @@ NavigationBar::NavigationBar(BrowserWindow* window)
     connect(m_buttonNext, SIGNAL(middleMouseClicked()), this, SLOT(goForwardInNewTab()));
     connect(m_buttonNext, SIGNAL(controlClicked()), this, SLOT(goForwardInNewTab()));
 
-    connect(m_reloadStop->buttonStop(), SIGNAL(clicked()), m_window, SLOT(stop()));
-    connect(m_reloadStop->buttonReload(), SIGNAL(clicked()), m_window, SLOT(reload()));
+    connect(m_reloadStop->buttonStop(), SIGNAL(clicked()), this, SLOT(stop()));
+    connect(m_reloadStop->buttonReload(), SIGNAL(clicked()), this, SLOT(reload()));
     connect(m_buttonHome, SIGNAL(clicked()), m_window, SLOT(goHome()));
     connect(m_buttonHome, SIGNAL(middleMouseClicked()), m_window, SLOT(goHomeInNewTab()));
     connect(m_buttonHome, SIGNAL(controlClicked()), m_window, SLOT(goHomeInNewTab()));
@@ -219,6 +219,11 @@ void NavigationBar::showStopButton()
 
 void NavigationBar::setSuperMenuVisible(bool visible)
 {
+#ifdef Q_OS_MAC
+    Q_UNUSED(visible)
+    return;
+#endif
+
     m_supMenu->setVisible(visible);
 }
 
@@ -258,7 +263,7 @@ void NavigationBar::aboutToShowHistoryBackMenu()
         if (item.isValid()) {
             QString title = titleForUrl(item.title(), item.url());
 
-            const QIcon icon = iconForPage(item.url(), qIconProvider->standardIcon(QStyle::SP_ArrowBack));
+            const QIcon icon = iconForPage(item.url(), IconProvider::standardIcon(QStyle::SP_ArrowBack));
             Action* act = new Action(icon, title);
             act->setData(i);
             connect(act, SIGNAL(triggered()), this, SLOT(goAtHistoryIndex()));
@@ -292,7 +297,7 @@ void NavigationBar::aboutToShowHistoryNextMenu()
         if (item.isValid()) {
             QString title = titleForUrl(item.title(), item.url());
 
-            const QIcon icon = iconForPage(item.url(), qIconProvider->standardIcon(QStyle::SP_ArrowForward));
+            const QIcon icon = iconForPage(item.url(), IconProvider::standardIcon(QStyle::SP_ArrowForward));
             Action* act = new Action(icon, title);
             act->setData(i);
             connect(act, SIGNAL(triggered()), this, SLOT(goAtHistoryIndex()));
@@ -319,7 +324,9 @@ void NavigationBar::clearHistory()
 
 void NavigationBar::contextMenuRequested(const QPoint &pos)
 {
-    m_window->popupToolbarsMenu(mapToGlobal(pos));
+    QMenu menu;
+    m_window->createToolbarsMenu(&menu);
+    menu.exec(mapToGlobal(pos));
 }
 
 void NavigationBar::goAtHistoryIndex()
@@ -356,13 +363,23 @@ void NavigationBar::goAtHistoryIndexInNewTab(int index)
 
 void NavigationBar::refreshHistory()
 {
-    if (mApp->isClosing() || m_window->isClosing() || !m_window->weView()) {
+    if (mApp->isClosing() || !m_window->weView()) {
         return;
     }
 
     QWebHistory* history = m_window->weView()->page()->history();
     m_buttonBack->setEnabled(history->canGoBack());
     m_buttonNext->setEnabled(history->canGoForward());
+}
+
+void NavigationBar::stop()
+{
+    m_window->action(QSL("View/Stop"))->trigger();
+}
+
+void NavigationBar::reload()
+{
+    m_window->action(QSL("View/Reload"))->trigger();
 }
 
 void NavigationBar::goBack()

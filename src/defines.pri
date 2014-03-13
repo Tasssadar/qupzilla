@@ -1,4 +1,5 @@
 DESTDIR = $$PWD/../bin
+QZ_DESTDIR = $$DESTDIR
 OBJECTS_DIR = $$PWD/../build
 MOC_DIR = $$PWD/../build
 RCC_DIR = $$PWD/../build
@@ -35,15 +36,18 @@ mac: DEFINES *= DISABLE_DBUS
 
     isEqual(QT_MAJOR_VERSION, 5) {
         greaterThan(QTWEBKIT_VERSION_MAJOR, 4) {
+            # There is one Qt5WebKitWidgets version now, which has same features as QtWebKit 2.3
             DEFINES *= USE_QTWEBKIT_2_2 USE_QTWEBKIT_2_3
         }
     }
     else { # Qt 4
-        greaterThan(QTWEBKIT_VERSION_MAJOR, 3):greaterThan(QTWEBKIT_VERSION_MINOR, 8) {
+        equals(QTWEBKIT_VERSION_MAJOR, 4):greaterThan(QTWEBKIT_VERSION_MINOR, 8) {
+            # 4.9.x = QtWebKit 2.2
             DEFINES *= USE_QTWEBKIT_2_2
         }
 
-        greaterThan(QTWEBKIT_VERSION_MAJOR, 3):greaterThan(QTWEBKIT_VERSION_MINOR, 9) {
+        equals(QTWEBKIT_VERSION_MAJOR, 4):greaterThan(QTWEBKIT_VERSION_MINOR, 9) {
+            # 4.10.x = QtWebKit 2.3
             DEFINES *= USE_QTWEBKIT_2_3
         }
     }
@@ -109,25 +113,25 @@ equals(d_disable_updates_check, "true") { DEFINES *= DISABLE_UPDATES_CHECK }
     hicolor_folder = /usr/share/icons/hicolor
 
     !equals(d_prefix, "") {
-        binary_folder = "$$d_prefix"bin
-        library_folder = "$$d_prefix"lib
-        data_folder = "$$d_prefix"share/qupzilla
-        launcher_folder = "$$d_prefix"share/applications
-        icon_folder = "$$d_prefix"share/pixmaps
-        hicolor_folder = "$$d_prefix"share/icons/hicolor
+        binary_folder = "$$d_prefix"/bin
+        library_folder = "$$d_prefix"/lib
+        data_folder = "$$d_prefix"/share/qupzilla
+        launcher_folder = "$$d_prefix"/share/applications
+        icon_folder = "$$d_prefix"/share/pixmaps
+        hicolor_folder = "$$d_prefix"/share/icons/hicolor
     }
 
     !equals(d_use_lib_path, ""):library_folder = $$d_use_lib_path
 
-    DEFINES *= USE_LIBPATH=\\\"""$$library_folder/"\\\""
-    DEFINES *= USE_DATADIR=\\\"""$$data_folder/"\\\""
+    DEFINES *= USE_LIBPATH=\\\"""$$library_folder"\\\""
+    DEFINES *= USE_DATADIR=\\\"""$$data_folder"\\\""
 
     # Git revision
     rev = $$system(cd ../ && sh $$PWD/../scripts/getrevision.sh)
     !equals(rev, ""): DEFINES *= GIT_REVISION=\\\"""$$rev"\\\""
 
-    # Define QZ_WS_X11 even with Qt5
-    DEFINES *= QZ_WS_X11
+    # Define QZ_WS_X11 even with Qt5 (but only when building for X11)
+    !contains(DEFINES, NO_X11) DEFINES *= QZ_WS_X11
 }
 
 isEmpty(QMAKE_LRELEASE) {

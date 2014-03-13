@@ -18,13 +18,13 @@
 #ifndef PROCESSINFO_H
 #define PROCESSINFO_H
 
-#ifdef QZ_WS_X11
+#ifdef Q_OS_UNIX
 #include <unistd.h>
 #endif
 
 #include <QString>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 /*
  * Code used from http://ubuntuforums.org/showpost.php?p=6593782&postcount=5
@@ -39,7 +39,7 @@ public:
     bool isRunning() const;
 
 private:
-#ifdef QZ_WS_X11
+#ifdef Q_OS_UNIX
     bool IsNumeric(const char* ccharptr_CharacterList) const;
 
     pid_t GetPIDbyName(const char* cchrptr_ProcessName) const;

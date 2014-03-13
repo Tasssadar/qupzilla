@@ -19,26 +19,30 @@
 
 #include <QTimer>
 
-DatabaseWriter::DatabaseWriter(QObject* parent)
-    : QObject(parent)
+Q_GLOBAL_STATIC(DatabaseWriter, qz_database_writer)
+
+DatabaseWriter::DatabaseWriter()
+    : QObject()
 {
 }
 
 void DatabaseWriter::executeQuery(const QSqlQuery &query)
 {
     m_queries.append(query);
-
     QTimer::singleShot(0, this, SLOT(execute()));
+}
+
+DatabaseWriter* DatabaseWriter::instance()
+{
+    return qz_database_writer();
 }
 
 void DatabaseWriter::execute()
 {
-    if (m_queries.count() == 0) {
+    if (m_queries.isEmpty()) {
         return;
     }
 
-    QSqlQuery query = m_queries.first();
-    query.exec();
-
+    m_queries.first().exec();
     m_queries.remove(0);
 }

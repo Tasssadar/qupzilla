@@ -18,7 +18,7 @@
 #ifndef TABSTACKEDWIDGET_H
 #define TABSTACKEDWIDGET_H
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 #include <QWidget>
 
@@ -54,7 +54,6 @@ public:
 
     void removeTab(int index);
 
-    void setUpLayout();
 
     int currentIndex() const;
     QWidget* currentWidget() const;
@@ -69,6 +68,7 @@ signals:
 public slots:
     void setCurrentIndex(int index);
     void setCurrentWidget(QWidget* widget);
+    void setUpLayout();
 
 private slots:
     void tabWasRemoved(int index);

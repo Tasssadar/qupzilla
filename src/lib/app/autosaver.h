@@ -21,23 +21,29 @@
 #include <QObject>
 #include <QBasicTimer>
 
-#include "qz_namespace.h"
+#include "qzcommon.h"
 
 class QUPZILLA_EXPORT AutoSaver : public QObject
 {
     Q_OBJECT
+
 public:
     explicit AutoSaver(QObject* parent = 0);
 
-signals:
-    void saveApp();
+    // Emits save() if timer is running. Call this from destructor.
+    void saveIfNecessary();
 
 public slots:
+    // Tells AutoSaver that change occurred. Signal save() will be emitted after a delay
+    void changeOcurred();
+
+signals:
+    void save();
 
 private:
     void timerEvent(QTimerEvent* event);
-    QBasicTimer m_timer;
 
+    QBasicTimer m_timer;
 };
 
 #endif // AUTOSAVER_H
