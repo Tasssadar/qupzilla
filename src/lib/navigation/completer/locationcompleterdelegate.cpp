@@ -78,27 +78,17 @@ void LocationCompleterDelegate::paint(QPainter* painter, const QStyleOptionViewI
     const int iconSize = 16;
     const int iconYPos = center - (iconSize / 2);
     QRect iconRect(leftPosition, iconYPos, iconSize, iconSize);
-    QPixmap pixmap = index.data(Qt::DecorationRole).value<QIcon>().pixmap(iconSize);
-    painter->drawPixmap(iconRect, pixmap);
+    if(index.data(LocationCompleterModel::BookmarkRole).toBool())
+        painter->drawPixmap(iconRect, IconProvider::instance()->bookmarkIcon());
+    else
+        painter->drawImage(iconRect, IconProvider::instance()->emptyWebImage());
     leftPosition = iconRect.right() + m_padding * 2;
-
-    // Draw star to bookmark items
-    int starPixmapWidth = 0;
-    if (index.data(LocationCompleterModel::BookmarkRole).toBool()) {
-        const QPixmap starPixmap = IconProvider::instance()->bookmarkIcon();
-        QSize starSize = starPixmap.size();
-        starPixmapWidth = starSize.width();
-        QPoint pos(rightPosition - starPixmapWidth, opt.rect.top() + m_padding);
-        QRect starRect(pos, starSize);
-        painter->drawPixmap(starRect, starPixmap);
-    }
 
     const QString searchText = index.data(LocationCompleterModel::SearchStringRole).toString();
 
     // Draw title
     const int leftTitleEdge = leftPosition + 2;
-    // RTL Support: remove conflicting of right-aligned text and starpixmap!
-    const int rightTitleEdge = rightPosition - m_padding - starPixmapWidth;
+    const int rightTitleEdge = rightPosition - m_padding;
     QRect titleRect(leftTitleEdge, opt.rect.top() + m_padding, rightTitleEdge - leftTitleEdge, titleMetrics.height());
     QString title(titleMetrics.elidedText(index.data(LocationCompleterModel::TitleRole).toString(), Qt::ElideRight, titleRect.width()));
     painter->setFont(titleFont);
