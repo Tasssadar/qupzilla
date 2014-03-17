@@ -1,7 +1,7 @@
 isEqual(QT_MAJOR_VERSION, 5) {
     QT += webkitwidgets network widgets printsupport sql script gui-private
 } else {
-    QT += core gui webkit sql network script
+    QT += core gui webkit sql network script concurrent
 }
 
 TARGET = QupZilla
@@ -172,7 +172,6 @@ SOURCES += \
     webview/webhistorywrapper.cpp \
     tools/pagethumbnailer.cpp \
     plugins/speeddial.cpp \
-    other/databasewriter.cpp \
     tools/enhancedmenu.cpp \
     navigation/siteicon.cpp \
     navigation/goicon.cpp \
@@ -260,7 +259,10 @@ SOURCES += \
     history/historymenu.cpp \
     app/datapaths.cpp \
     app/profilemanager.cpp \
-    app/mainmenu.cpp
+    app/mainmenu.cpp \
+    tools/sqldatabase.cpp \
+    navigation/completer/locationcompleterrefreshjob.cpp \
+    webview/tabicon.cpp
 
 
 HEADERS  += \
@@ -369,7 +371,6 @@ HEADERS  += \
     webview/webhistorywrapper.h \
     tools/pagethumbnailer.h \
     plugins/speeddial.h \
-    other/databasewriter.h \
     tools/enhancedmenu.h \
     navigation/siteicon.h \
     navigation/goicon.h \
@@ -461,7 +462,10 @@ HEADERS  += \
     history/historymenu.h \
     app/datapaths.h \
     app/profilemanager.h \
-    app/mainmenu.h
+    app/mainmenu.h \
+    tools/sqldatabase.h \
+    navigation/completer/locationcompleterrefreshjob.h \
+    webview/tabicon.h
 
 FORMS    += \
     preferences/autofillmanager.ui \

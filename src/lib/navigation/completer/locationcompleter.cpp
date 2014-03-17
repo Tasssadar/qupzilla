@@ -18,6 +18,7 @@
 #include "locationcompleter.h"
 #include "locationcompletermodel.h"
 #include "locationcompleterview.h"
+#include "locationcompleterrefreshjob.h"
 #include "locationbar.h"
 #include "mainapplication.h"
 #include "browserwindow.h"
@@ -35,7 +36,8 @@ LocationCompleter::LocationCompleter(QObject* parent)
     : QObject(parent)
     , m_window(0)
     , m_locationBar(0)
-    , m_showingMostVisited(false)
+    , m_lastRefreshTimestamp(0)
+    , m_popupClosed(false)
 {
     if (!s_view) {
         s_model = new LocationCompleterModel;
@@ -54,38 +56,22 @@ void LocationCompleter::setLocationBar(LocationBar* locationBar)
     m_locationBar = locationBar;
 }
 
-QString LocationCompleter::domainCompletion() const
-{
-    return qzSettings->useInlineCompletion ? m_completedDomain : QString();
-}
-
-bool LocationCompleter::isShowingMostVisited() const
-{
-    return m_showingMostVisited;
-}
-
-bool LocationCompleter::isPopupVisible() const
-{
-    return s_view->isVisible();
-}
-
 void LocationCompleter::closePopup()
 {
-    m_completedDomain.clear();
-    m_showingMostVisited = false;
+    m_popupClosed = true;
     s_view->close();
 }
 
 void LocationCompleter::complete(const QString &string)
 {
-    m_showingMostVisited = string.isEmpty();
+    QString trimmedStr = string.trimmed();
 
-    if (qzSettings->useInlineCompletion) {
-        m_completedDomain = createDomainCompletionString(string);
-    }
+    // Indicates that new completion was requested by user
+    // Eg. popup was not closed yet this completion session
+    m_popupClosed = false;
 
-    s_model->refreshCompletions(string);
-    showPopup();
+    LocationCompleterRefreshJob* job = new LocationCompleterRefreshJob(trimmedStr);
+    connect(job, SIGNAL(finished()), this, SLOT(refreshJobFinished()));
 }
 
 void LocationCompleter::showMostVisited()
@@ -93,15 +79,25 @@ void LocationCompleter::showMostVisited()
     complete(QString());
 }
 
-void LocationCompleter::currentChanged(const QModelIndex &index)
+void LocationCompleter::refreshJobFinished()
 {
-    QString completion = index.data().toString();
+    LocationCompleterRefreshJob* job = qobject_cast<LocationCompleterRefreshJob*>(sender());
+    Q_ASSERT(job);
 
-    if (completion.isEmpty()) {
-        completion = m_originalText;
+    // Don't show result of older jobs
+    // Also don't open the popup again when it was already closed
+    if (job->timestamp() > m_lastRefreshTimestamp && !m_popupClosed) {
+        s_model->setCompletions(job->completions());
+        m_lastRefreshTimestamp = job->timestamp();
+
+        showPopup();
+
+        if (qzSettings->useInlineCompletion) {
+            emit showDomainCompletion(job->domainCompletion());
+        }
     }
 
-    emit showCompletion(completion);
+    job->deleteLater();
 }
 
 void LocationCompleter::slotPopupClosed()
@@ -114,6 +110,17 @@ void LocationCompleter::slotPopupClosed()
     disconnect(s_view->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(currentChanged(QModelIndex)));
 
     emit popupClosed();
+}
+
+void LocationCompleter::currentChanged(const QModelIndex &index)
+{
+    QString completion = index.data().toString();
+
+    if (completion.isEmpty()) {
+        completion = m_originalText;
+    }
+
+    emit showCompletion(completion);
 }
 
 void LocationCompleter::indexActivated(const QModelIndex &index)
@@ -203,22 +210,17 @@ void LocationCompleter::indexDeleteRequested(const QModelIndex &index)
         mApp->history()->deleteHistoryEntry(id);
     }
 
+    s_view->setUpdatesEnabled(false);
     s_model->removeRow(index.row(), index.parent());
-}
+    s_view->setUpdatesEnabled(true);
 
-QString LocationCompleter::createDomainCompletionString(const QString &text)
-{
-    QString completion = s_model->completeDomain(text);
-
-    if (text.startsWith(QLatin1String("www."))) {
-        return completion.mid(text.size());
+    // Close popup when removing last item
+    if (s_model->rowCount() == 0) {
+        closePopup();
     }
-
-    if (completion.startsWith(QLatin1String("www."))) {
-        completion = completion.mid(4);
+    else {
+        adjustPopupSize();
     }
-
-    return completion.mid(text.size());
 }
 
 void LocationCompleter::switchToTab(BrowserWindow* window, int tab)

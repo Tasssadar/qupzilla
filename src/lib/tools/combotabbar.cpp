@@ -32,7 +32,6 @@
 #include <QTabBar>
 #include <QMouseEvent>
 #include <QApplication>
-#include <QDebug>
 
 // taken from qtabbar_p.h
 #define ANIMATION_DURATION 250
@@ -213,6 +212,15 @@ int ComboTabBar::tabAt(const QPoint &pos) const
     }
 
     return index;
+}
+
+bool ComboTabBar::emptyArea(const QPoint &pos) const
+{
+    if (tabAt(pos) != -1) {
+        return false;
+    }
+
+    return qobject_cast<TabBarHelper*>(QApplication::widgetAt(mapToGlobal(pos)));
 }
 
 int ComboTabBar::mainTabBarCurrentIndex() const

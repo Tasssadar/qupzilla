@@ -39,26 +39,24 @@ public:
     void setMainWindow(BrowserWindow* window);
     void setLocationBar(LocationBar* locationBar);
 
-    QString domainCompletion() const;
-    bool isShowingMostVisited() const;
-
-    bool isPopupVisible() const;
     void closePopup();
-
-signals:
-    void showCompletion(const QString &completion);
-    void loadCompletion();
-    void clearCompletion();
-
-    void popupClosed();
 
 public slots:
     void complete(const QString &string);
     void showMostVisited();
 
+signals:
+    void showCompletion(const QString &completion);
+    void showDomainCompletion(const QString &completion);
+    void loadCompletion();
+    void clearCompletion();
+    void popupClosed();
+
 private slots:
-    void currentChanged(const QModelIndex &index);
+    void refreshJobFinished();
     void slotPopupClosed();
+
+    void currentChanged(const QModelIndex &index);
 
     void indexActivated(const QModelIndex &index);
     void indexCtrlActivated(const QModelIndex &index);
@@ -66,7 +64,6 @@ private slots:
     void indexDeleteRequested(const QModelIndex &index);
 
 private:
-    QString createDomainCompletionString(const QString &text);
     void switchToTab(BrowserWindow* window, int tab);
     void loadUrl(const QUrl &url);
 
@@ -75,9 +72,9 @@ private:
 
     BrowserWindow* m_window;
     LocationBar* m_locationBar;
+    qint64 m_lastRefreshTimestamp;
     QString m_originalText;
-    QString m_completedDomain;
-    bool m_showingMostVisited;
+    bool m_popupClosed;
 
     static LocationCompleterView* s_view;
     static LocationCompleterModel* s_model;

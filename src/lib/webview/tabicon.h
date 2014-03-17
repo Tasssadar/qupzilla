@@ -1,6 +1,6 @@
 /* ============================================================
 * QupZilla - WebKit based browser
-* Copyright (C) 2010-2014  David Rosca <nowrep@gmail.com>
+* Copyright (C) 2014  David Rosca <nowrep@gmail.com>
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -15,34 +15,46 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
-#include "databasewriter.h"
+#ifndef TABICON_H
+#define TABICON_H
 
-#include <QTimer>
+#include <QWidget>
+#include <QImage>
 
-Q_GLOBAL_STATIC(DatabaseWriter, qz_database_writer)
+#include "qzcommon.h"
 
-DatabaseWriter::DatabaseWriter()
-    : QObject()
+class QTimer;
+
+class WebTab;
+
+class QUPZILLA_EXPORT TabIcon : public QWidget
 {
-}
+    Q_OBJECT
 
-void DatabaseWriter::executeQuery(const QSqlQuery &query)
-{
-    m_queries.append(query);
-    QTimer::singleShot(0, this, SLOT(execute()));
-}
+public:
+    explicit TabIcon(QWidget* parent = 0);
 
-DatabaseWriter* DatabaseWriter::instance()
-{
-    return qz_database_writer();
-}
+    void setWebTab(WebTab* tab);
+    void setIcon(const QIcon &icon);
 
-void DatabaseWriter::execute()
-{
-    if (m_queries.isEmpty()) {
-        return;
-    }
+private slots:
+    void showIcon();
+    void showLoadingAnimation();
+    void hideLoadingAnimation();
 
-    m_queries.first().exec();
-    m_queries.remove(0);
-}
+    void updateAnimationFrame();
+
+private:
+    void paintEvent(QPaintEvent* event);
+
+    WebTab* m_tab;
+    QTimer* m_updateTimer;
+
+    QImage m_siteImage;
+    QImage m_animationImage;
+    int m_currentFrame;
+    int m_framesCount;
+    bool m_animationRunning;
+};
+
+#endif // TABICON_H

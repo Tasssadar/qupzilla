@@ -65,8 +65,7 @@
 
 #navigation-button-supermenu
 {
-    qproperty-themeIcon: "preferences-desktop";
-    qproperty-fallbackIcon: url(images/preferences-desktop.png);
+    qproperty-icon: url(images/menu.png);
 }
 
 #navigation-button-exitfullscreen
@@ -108,16 +107,28 @@
     qproperty-fixedsize: 20px 25px;
 }
 
+#tabwidget-button-opentabs::menu-indicator
+{
+    image: none;
+}
+
+#tabwidget-button-closedtabs
+{
+    qproperty-themeIcon: "user-trash-full";
+    qproperty-fallbackIcon: url(images/user-trash-full.png);
+    qproperty-fixedsize: 22px 25px;
+}
+
+#tabwidget-button-closedtabs::menu-indicator
+{
+    image: none;
+}
+
 #tabwidget-button-addtab
 {
     qproperty-themeIcon: "list-add";
     qproperty-fallbackIcon: url(images/list-add.png);
     qproperty-fixedsize: 22px 25px;
-}
-
-#tabwidget-button-opentabs::menu-indicator
-{
-    image: none;
 }
 
 /*IconProvider*/
@@ -129,13 +140,8 @@ IconProvider
 /*LocationBar*/
 #locationbar
 {
-    border-width: 4px;
-    padding-right: -4px;
-    padding-left: -4px;
-    padding-top: -2px;
-    padding-bottom: -2px;
-    qproperty-fixedheight: 27;
-    qproperty-leftMargin: 26;
+    qproperty-minHeight: 28;
+    qproperty-leftMargin: 22;
 }
 
 #locationbar[secured="true"]
@@ -156,31 +162,60 @@ IconProvider
 
 #locationbar-siteicon
 {
+    padding-left: 6px;
     border-image: url(images/transp.png);
-    qproperty-fixedsize:30px 27px;
-    padding-left: 0px;
+    qproperty-fixedsize: 22px 16px;
 }
 
 #locationbar-rss-icon
 {
     qproperty-pixmap: url(images/rss.png);
+    qproperty-fixedsize: 16px 16px;
 }
 
 #locationbar-goicon
 {
     qproperty-fixedsize: 16px 16px;
     qproperty-themeIcon: "go-jump-locationbar";
-    qproperty-fallbackIcon: url(images/gotoaddress.png);
+    qproperty-fallbackIcon: url(images/go-jump-locationbar.png);
 }
 
 #locationbar-down-icon
 {
+    padding-right: 2px;
     qproperty-pixmap: url(images/navigation-dropdown.png);
 }
 
 #locationbar-autofillicon
 {
     qproperty-pixmap: url(images/key.png);
+}
+
+/*WebSearchBar*/
+#websearchbar
+{
+    qproperty-minHeight: 28;
+    qproperty-leftMargin: 30;
+}
+
+#websearchbar-searchbutton
+{
+    qproperty-fixedsize: 22px 16px;
+    qproperty-themeIcon: "edit-find";
+    qproperty-fallbackIcon: url(images/edit-find.png);
+}
+
+#websearchbar-searchprovider-comobobox
+{
+    border-image: url(images/websearch-bg.png);
+    padding-right: 6px;
+    padding-left: 2px;
+    qproperty-fixedsize: 32px 16px;
+}
+
+#websearchbar-searchprovider-comobobox::menu-indicator
+{
+    image: none;
 }
 
 /*BookmarksToolbar*/
@@ -202,35 +237,6 @@ IconProvider
     background: transparent;
 }
 
-/*WebSearchBar*/
-#websearchbar
-{
-    border-width: 4px;
-    padding-right: -4px;
-    padding-top: -2px;
-    padding-bottom: -2px;
-    qproperty-fixedheight: 27;
-    qproperty-leftMargin: 30;
-}
-
-#websearchbar-searchbutton
-{
-    qproperty-fixedsize: 20px 16px;
-    qproperty-themeIcon: "edit-find";
-    qproperty-fallbackIcon: url(images/edit-find.png);
-}
-
-#websearchbar-searchprovider-comobobox
-{
-    border-image: url(images/websearch-bg.png);
-    padding-left:-8px;
-    qproperty-fixedsize: 37px 27px;
-}
-
-#websearchbar-searchprovider-comobobox::menu-indicator
-{
-    image: none;
-}
 
 /*SourceViewer*/
 #sourceviewer-textedit

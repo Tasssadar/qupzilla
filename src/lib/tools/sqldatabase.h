@@ -1,6 +1,6 @@
 /* ============================================================
 * QupZilla - WebKit based browser
-* Copyright (C) 2010-2014  David Rosca <nowrep@gmail.com>
+* Copyright (C) 2014  David Rosca <nowrep@gmail.com>
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -15,31 +15,38 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
-#ifndef DATABASEWRITER_H
-#define DATABASEWRITER_H
+#ifndef SQLDATABASE_H
+#define SQLDATABASE_H
 
-#include <QObject>
+#include <QHash>
+#include <QMutex>
+#include <QFuture>
 #include <QSqlQuery>
-#include <QVector>
 
 #include "qzcommon.h"
 
-class QUPZILLA_EXPORT DatabaseWriter : public QObject
+class QUPZILLA_EXPORT SqlDatabase : public QObject
 {
     Q_OBJECT
+
 public:
-    explicit DatabaseWriter();
+    explicit SqlDatabase(QObject* parent = 0);
+    ~SqlDatabase();
 
-    // Delayed execution of query
-    void executeQuery(const QSqlQuery &query);
+    // Returns database connection for thread, creates new connection if not exists
+    QSqlDatabase databaseForThread(QThread* thread);
 
-    static DatabaseWriter* instance();
+    // Executes query using correct database for current thread
+    QSqlQuery exec(const QSqlQuery &query);
 
-private slots:
-    void execute();
+    // Executes query asynchronously on one thread from QThreadPool
+    QFuture<QSqlQuery> execAsync(const QSqlQuery &query);
+
+    static SqlDatabase* instance();
 
 private:
-    QVector<QSqlQuery> m_queries;
+    QHash<QThread*, QSqlDatabase> m_databases;
+    QMutex m_mutex;
 };
 
-#endif // DATABASEWRITER_H
+#endif // SQLDATABASE_H

@@ -127,7 +127,6 @@ bool ProfileManager::removeProfile(const QString &profileName)
 QString ProfileManager::currentProfile() const
 {
     QString path = DataPaths::currentProfilePath();
-    path = path.mid(0, path.size() - 1);
     return path.mid(path.lastIndexOf(QLatin1Char('/')) + 1);
 }
 
@@ -250,7 +249,7 @@ void ProfileManager::connectDatabase()
 
     // Reconnect
     if (m_databaseConnected) {
-        QSqlDatabase::removeDatabase(QLatin1String("qt_sql_default_connection"));
+        QSqlDatabase::removeDatabase(QSqlDatabase::database().connectionName());
     }
 
     QSqlDatabase db = QSqlDatabase::addDatabase(QLatin1String("QSQLITE"));

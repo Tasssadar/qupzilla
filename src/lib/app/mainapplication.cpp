@@ -32,6 +32,7 @@
 #include "rssmanager.h"
 #include "proxystyle.h"
 #include "pluginproxy.h"
+#include "sqldatabase.h"
 #include "iconprovider.h"
 #include "browserwindow.h"
 #include "cookiemanager.h"
@@ -54,9 +55,9 @@
 #include <QDesktopServices>
 #include <QSqlDatabase>
 #include <QTranslator>
+#include <QThreadPool>
 #include <QSettings>
 #include <QProcess>
-#include <QDebug>
 #include <QTimer>
 #include <QDir>
 
@@ -267,11 +268,14 @@ MainApplication::MainApplication(int &argc, char** argv)
 
 MainApplication::~MainApplication()
 {
+    IconProvider::instance()->saveIconsToDatabase();
+
+    // Wait for all QtConcurrent jobs to finish
+    QThreadPool::globalInstance()->waitForDone();
+
     // Delete all classes that are saving data in destructor
     delete m_bookmarks;
     delete m_cookieJar;
-
-    IconProvider::instance()->saveIconsToDatabase();
 }
 
 bool MainApplication::isClosing() const

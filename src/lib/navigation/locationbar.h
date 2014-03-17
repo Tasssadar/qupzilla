@@ -18,13 +18,12 @@
 #ifndef LOCATIONBAR_H
 #define LOCATIONBAR_H
 
-#include <QUrl>
-
 #include "qzcommon.h"
 #include "lineedit.h"
 
+class QStringListModel;
+
 class BrowserWindow;
-class LineEdit;
 class LocationCompleter;
 class ClickableLabel;
 class TabbedWebView;
@@ -37,45 +36,39 @@ class AutoFillIcon;
 class QUPZILLA_EXPORT LocationBar : public LineEdit
 {
     Q_OBJECT
-    Q_PROPERTY(QSize fixedsize READ size WRITE setFixedSize)
-    Q_PROPERTY(int fixedwidth READ width WRITE setFixedWidth)
-    Q_PROPERTY(int fixedheight READ height WRITE setFixedHeight)
 
 public:
     explicit LocationBar(BrowserWindow* window);
-    ~LocationBar();
 
+    TabbedWebView* webView() const;
     void setWebView(TabbedWebView* view);
-    TabbedWebView* webView() { return m_webView; }
+
+public slots:
+    void setText(const QString &text);
+    void showUrl(const QUrl &url);
 
 signals:
     void loadUrl(const QUrl &url);
 
-public slots:
-    void showUrl(const QUrl &url);
-    void setText(const QString &text);
-
-protected:
-    void paintEvent(QPaintEvent* event);
-
 private slots:
-    void textEdit();
-    void urlEnter();
+    void textEditted();
+    void requestLoadUrl();
     void pasteAndGo();
 
-    void clearIcon();
-    void siteIconChanged();
-    void setPrivacy(bool state);
-    void showRSSIcon(bool state);
-
+    void updateSiteIcon();
     void updatePlaceHolderText();
-    void showCompletion(const QString &newText);
-    void clearCompletion();
-    void completionPopupClosed();
 
-    void onLoadStarted();
-    void onLoadProgress(int progress);
-    void onLoadFinished();
+    void setPrivacyState(bool state);
+    void setRssIconVisible(bool state);
+    void setGoIconVisible(bool state);
+
+    void showCompletion(const QString &completion);
+    void showDomainCompletion(const QString &completion);
+    void clearCompletion();
+
+    void loadStarted();
+    void loadProgress(int progress);
+    void loadFinished();
     void hideProgress();
 
     void loadSettings();
@@ -88,20 +81,20 @@ private:
     };
 
     void contextMenuEvent(QContextMenuEvent* event);
+    void showEvent(QShowEvent* event);
     void focusInEvent(QFocusEvent* event);
     void focusOutEvent(QFocusEvent* event);
     void keyPressEvent(QKeyEvent* event);
     void keyReleaseEvent(QKeyEvent* event);
     void dropEvent(QDropEvent* event);
+    void paintEvent(QPaintEvent* event);
 
-    QUrl createUrl();
+    QUrl createUrl() const;
     QString convertUrlToText(const QUrl &url) const;
-    bool isInlineCompletionVisible() const;
-
-    void showGoButton();
-    void hideGoButton();
+    void refreshTextFormat();
 
     LocationCompleter* m_completer;
+    QStringListModel* m_domainCompleterModel;
 
     BookmarksIcon* m_bookmarkIcon;
     GoIcon* m_goIcon;
@@ -122,10 +115,6 @@ private:
     bool m_progressVisible;
     ProgressStyle m_progressStyle;
     QColor m_progressColor;
-
-    bool m_forcePaintEvent;
-    bool m_inlineCompletionVisible;
-    bool m_popupClosed;
 };
 
 #endif // LOCATIONBAR_H
