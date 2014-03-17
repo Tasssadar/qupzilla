@@ -59,7 +59,6 @@ public slots:
 private slots:
     void currentChanged(const QModelIndex &index);
     void slotPopupClosed();
-    void modelRefreshComplete();
 
     void indexActivated(const QModelIndex &index);
     void indexCtrlActivated(const QModelIndex &index);
@@ -79,8 +78,6 @@ private:
     QString m_originalText;
     QString m_completedDomain;
     bool m_showingMostVisited;
-    bool m_active;
-    qint64 m_lastRefreshTimestamp;
 
     static LocationCompleterView* s_view;
     static LocationCompleterModel* s_model;

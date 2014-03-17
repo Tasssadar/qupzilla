@@ -19,13 +19,11 @@
 #define LOCATIONCOMPLETERMODEL_H
 
 #include <QStandardItemModel>
-#include <QList>
 
 #include "qzcommon.h"
 
 class QSqlQuery;
 class QUrl;
-class QStandardItem;
 
 class LocationCompleterModel : public QStandardItemModel
 {
@@ -42,14 +40,9 @@ public:
         TabPositionTabRole = Qt::UserRole + 9
     };
 
-    struct RefreshResult {
-        QList<QStandardItem*> *items;
-        qint64 timestamp;
-    };
-
     explicit LocationCompleterModel(QObject* parent = 0);
 
-    RefreshResult refreshCompletions(const QString &string);
+    void refreshCompletions(const QString &string);
     void showMostVisited();
 
     QString completeDomain(const QString &text);

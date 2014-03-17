@@ -28,12 +28,6 @@
 #include "bookmarkitem.h"
 #include "qzsettings.h"
 
-#include <QtConcurrentRun>
-#include <QFutureWatcher>
-#include <QPointer>
-
-typedef QFutureWatcher<LocationCompleterModel::RefreshResult> ResultWatcher;
-
 LocationCompleterView* LocationCompleter::s_view = 0;
 LocationCompleterModel* LocationCompleter::s_model = 0;
 
@@ -42,8 +36,6 @@ LocationCompleter::LocationCompleter(QObject* parent)
     , m_window(0)
     , m_locationBar(0)
     , m_showingMostVisited(false)
-    , m_active(false)
-    , m_lastRefreshTimestamp(0)
 {
     if (!s_view) {
         s_model = new LocationCompleterModel;
@@ -81,53 +73,18 @@ void LocationCompleter::closePopup()
 {
     m_completedDomain.clear();
     m_showingMostVisited = false;
-    m_active = false;
     s_view->close();
 }
 
 void LocationCompleter::complete(const QString &string)
 {
-    m_active = true;
     m_showingMostVisited = string.isEmpty();
 
     if (qzSettings->useInlineCompletion) {
         m_completedDomain = createDomainCompletionString(string);
     }
 
-    ResultWatcher *watcher = new ResultWatcher(this);
-
-    connect(watcher, SIGNAL(finished()), SLOT(modelRefreshComplete()));
-    connect(watcher, SIGNAL(finished()), watcher, SLOT(deleteLater()));
-
-    QFuture<LocationCompleterModel::RefreshResult> f =
-            QtConcurrent::run(s_model, &LocationCompleterModel::refreshCompletions, string);
-
-    watcher->setFuture(f);
-}
-
-void LocationCompleter::modelRefreshComplete()
-{
-    Q_ASSERT(sender() && sender()->inherits("QFutureWatcherBase"));
-
-    ResultWatcher *watcher = (ResultWatcher*)sender();
-    LocationCompleterModel::RefreshResult res = watcher->result();
-
-    if(!m_active || res.timestamp <= m_lastRefreshTimestamp) {
-        while(!res.items->empty()) {
-            delete res.items->back();
-            res.items->pop_back();
-        }
-        delete res.items;
-        return;
-    }
-
-    m_lastRefreshTimestamp = res.timestamp;
-
-    s_model->clear();
-    s_model->appendColumn(*res.items);
-
-    delete res.items;
-
+    s_model->refreshCompletions(string);
     showPopup();
 }
 
@@ -302,7 +259,7 @@ void LocationCompleter::showPopup()
 {
     Q_ASSERT(m_locationBar);
 
-    if (!m_active || s_model->rowCount() == 0) {
+    if (s_model->rowCount() == 0) {
         s_view->close();
         return;
     }

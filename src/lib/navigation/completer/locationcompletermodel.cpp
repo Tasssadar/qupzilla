@@ -25,7 +25,6 @@
 #include "tabwidget.h"
 
 #include <QSqlQuery>
-#include <QDateTime>
 
 LocationCompleterModel::LocationCompleterModel(QObject* parent)
     : QStandardItemModel(parent)
@@ -46,26 +45,24 @@ static bool countBiggerThan(const QStandardItem* i1, const QStandardItem* i2)
     return i1Bookmark;
 }
 
-LocationCompleterModel::RefreshResult LocationCompleterModel::refreshCompletions(const QString &string)
+void LocationCompleterModel::refreshCompletions(const QString &string)
 {
-    RefreshResult res;
-    res.timestamp = QDateTime::currentMSecsSinceEpoch();
-    res.items = new QList<QStandardItem*>();
-
     if (m_lastCompletion == string) {
         refreshTabPositions();
-        return res;
+        return;
     }
 
     m_lastCompletion = string;
 
     if (string.isEmpty()) {
         showMostVisited();
-        return res;
+        return;
     }
 
+    clear();
+
     QList<QUrl> urlList;
-    QList<QStandardItem*>& itemList = *res.items;
+    QList<QStandardItem*> itemList;
     Type showType = (Type) qzSettings->showLocationSuggestions;
 
     if (showType == HistoryAndBookmarks || showType == Bookmarks) {
@@ -76,6 +73,7 @@ LocationCompleterModel::RefreshResult LocationCompleterModel::refreshCompletions
             Q_ASSERT(bookmark->isUrl());
 
             QStandardItem* item = new QStandardItem();
+            item->setIcon(bookmark->icon());
             item->setText(bookmark->url().toEncoded());
             item->setData(-1, IdRole);
             item->setData(bookmark->title(), TitleRole);
@@ -104,6 +102,7 @@ LocationCompleterModel::RefreshResult LocationCompleterModel::refreshCompletions
             }
 
             QStandardItem* item = new QStandardItem();
+            item->setIcon(IconProvider::iconForUrl(url));
             item->setText(url.toEncoded());
             item->setData(query.value(0), IdRole);
             item->setData(query.value(2), TitleRole);
@@ -120,7 +119,7 @@ LocationCompleterModel::RefreshResult LocationCompleterModel::refreshCompletions
     // Sort by count
     qSort(itemList.begin(), itemList.end(), countBiggerThan);
 
-    return res;
+    appendColumn(itemList);
 }
 
 void LocationCompleterModel::showMostVisited()
