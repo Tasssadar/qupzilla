@@ -75,8 +75,6 @@ WebView::WebView(QWidget* parent)
     // Zoom levels same as in firefox
     m_zoomLevels << 30 << 50 << 67 << 80 << 90 << 100 << 110 << 120 << 133 << 150 << 170 << 200 << 240 << 300;
 
-    setContextMenuPolicy(Qt::PreventContextMenu);
-
 #if QTWEBKIT_TO_2_3
     installEventFilter(this);
 #endif
@@ -1301,15 +1299,6 @@ void WebView::mouseReleaseEvent(QMouseEvent* event)
             }
         }
 
-        break;
-    }
-
-    case Qt::RightButton: {
-        // dirtyyyyyyyyyyy!
-        setContextMenuPolicy(Qt::DefaultContextMenu);
-        QContextMenuEvent ctx_ev(QContextMenuEvent::Mouse, event->pos(), event->globalPos(), event->modifiers());
-        QCoreApplication::sendEvent(this, &ctx_ev);
-        setContextMenuPolicy(Qt::PreventContextMenu);
         break;
     }
 
