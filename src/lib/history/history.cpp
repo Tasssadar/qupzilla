@@ -68,14 +68,16 @@ void History::addHistoryEntry(const QUrl &url, QString title)
     if (!m_isSaving) {
         return;
     }
-    if (url.scheme() == QLatin1String("qupzilla") ||
-            url.scheme() == QLatin1String("about") ||
-            url.scheme() == QLatin1String("data") ||
-            url.isEmpty()) {
+    if (url.isEmpty() ||
+        url.scheme() == QLatin1String("qupzilla") ||
+        url.scheme() == QLatin1String("about") ||
+        url.scheme() == QLatin1String("data")
+       ) {
         return;
     }
+
     if (title.isEmpty()) {
-        title = tr("No Named Page");
+        title = tr("Empty Page");
     }
 
     QSqlQuery query;

@@ -22,6 +22,7 @@
 #include "webview.h"
 
 class PopupWebPage;
+class LoadRequest;
 class Menu;
 
 class QUPZILLA_EXPORT PopupWebView : public WebView
@@ -33,9 +34,8 @@ public:
     void setWebPage(PopupWebPage* page);
     PopupWebPage* webPage();
 
-    QWidget* overlayForJsAlert();
-    void loadInNewTab(const QNetworkRequest &req, QNetworkAccessManager::Operation op,
-                      const QByteArray &data, Qz::NewTabPositionFlags position);
+    QWidget* overlayWidget();
+    void loadInNewTab(const LoadRequest &req, Qz::NewTabPositionFlags position);
 
 signals:
 

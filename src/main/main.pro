@@ -16,20 +16,18 @@ TEMPLATE = app
 
 unix:!contains(DEFINES, "DISABLE_DBUS") QT += dbus
 
-INCLUDEPATH += ../lib/app\
-               ../lib/3rdparty\
-               ../lib/session\
-               ../lib/webview
+INCLUDEPATH += ../lib/3rdparty \
+               ../lib/app \
+               ../lib/session \
+               ../lib/webtab \
 
-DEPENDPATH += ../lib/app\
-              ../lib/3rdparty\
-              ../lib/session\
-              ../lib/webview
+DEPENDPATH += $$INCLUDEPATH
 
-SOURCES =      main.cpp
+SOURCES = main.cpp
+
 OTHER_FILES += appicon.rc \
                appicon_os2.rc \
-               Info.plist
+               Info.plist \
 
 os2:RC_FILE = appicon_os2.rc
 win32:RC_FILE = appicon.rc

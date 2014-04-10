@@ -66,6 +66,9 @@ static QString createLanguageItem(const QString &lang)
     QString country = QLocale::countryToString(locale.country());
     QString language = QLocale::languageToString(locale.language());
 
+    if (lang == QLatin1String("es_ES")) {
+        return QString::fromUtf8("Castellano");
+    }
     if (lang == QLatin1String("nqo")) {
         return QString("N'ko (nqo)");
     }
@@ -236,7 +239,7 @@ Preferences::Preferences(BrowserWindow* window, QWidget* parent)
     ui->switchToNewTabs->setChecked(settings.value("OpenNewTabsSelected", false).toBool());
     ui->dontCloseOnLastTab->setChecked(settings.value("dontCloseWithOneTab", false).toBool());
     ui->askWhenClosingMultipleTabs->setChecked(settings.value("AskOnClosing", false).toBool());
-    ui->showClosedTabsButton->setChecked(settings.value("showClosedTabsButton", true).toBool());
+    ui->showClosedTabsButton->setChecked(settings.value("showClosedTabsButton", false).toBool());
     ui->showTabPreviews->setChecked(settings.value("showTabPreviews", false).toBool());
     ui->animatedTabPreviews->setChecked(settings.value("tabPreviewAnimationsEnabled", true).toBool());
     ui->showCloseOnInactive->setCurrentIndex(settings.value("showCloseOnInactiveTabs", 0).toInt());
@@ -271,7 +274,7 @@ Preferences::Preferences(BrowserWindow* window, QWidget* parent)
     ui->searchWithDefaultEngine->setChecked(settings.value("SearchWithDefaultEngine", false).toBool());
     settings.endGroup();
 
-    //BROWSING
+    // BROWSING
     settings.beginGroup("Web-Browser-Settings");
     ui->allowPlugins->setChecked(settings.value("allowFlash", true).toBool());
     ui->allowJavaScript->setChecked(settings.value("allowJavaScript", true).toBool());
@@ -284,9 +287,13 @@ Preferences::Preferences(BrowserWindow* window, QWidget* parent)
     ui->animateScrolling->setChecked(settings.value("AnimateScrolling", true).toBool());
     ui->printEBackground->setChecked(settings.value("PrintElementBackground", true).toBool());
     ui->wheelScroll->setValue(settings.value("wheelScrollLines", qApp->wheelScrollLines()).toInt());
-    ui->defaultZoom->setValue(settings.value("DefaultZoom", 100).toInt());
     ui->xssAuditing->setChecked(settings.value("XSSAuditing", false).toBool());
     ui->formsUndoRedo->setChecked(settings.value("enableFormsUndoRedo", false).toBool());
+
+    foreach (int level, WebView::zoomLevels()) {
+        ui->defaultZoomLevel->addItem(QString("%1%").arg(level));
+    }
+    ui->defaultZoomLevel->setCurrentIndex(settings.value("DefaultZoomLevel", WebView::zoomLevels().indexOf(100)).toInt());
 
     //Cache
     ui->pagesInCache->setValue(settings.value("maximumCachedPages", 3).toInt());
@@ -373,6 +380,7 @@ Preferences::Preferences(BrowserWindow* window, QWidget* parent)
     settings.beginGroup("Shortcuts");
     ui->switchTabsAlt->setChecked(settings.value("useTabNumberShortcuts", true).toBool());
     ui->loadSpeedDialsCtrl->setChecked(settings.value("useSpeedDialNumberShortcuts", true).toBool());
+    ui->singleKeyShortcuts->setChecked(settings.value("useSingleKeyShortcuts", false).toBool());
     settings.endGroup();
 
     //NOTIFICATIONS
@@ -957,6 +965,7 @@ void Preferences::saveSettings()
     settings.beginGroup("Shortcuts");
     settings.setValue("useTabNumberShortcuts", ui->switchTabsAlt->isChecked());
     settings.setValue("useSpeedDialNumberShortcuts", ui->loadSpeedDialsCtrl->isChecked());
+    settings.setValue("useSingleKeyShortcuts", ui->singleKeyShortcuts->isChecked());
     settings.endGroup();
 
     //BROWSING
@@ -975,7 +984,7 @@ void Preferences::saveSettings()
     settings.setValue("DoNotTrack", ui->doNotTrack->isChecked());
     settings.setValue("CheckUpdates", ui->checkUpdates->isChecked());
     settings.setValue("LoadTabsOnActivation", ui->dontLoadTabsUntilSelected->isChecked());
-    settings.setValue("DefaultZoom", ui->defaultZoom->value());
+    settings.setValue("DefaultZoomLevel", ui->defaultZoomLevel->currentIndex());
     settings.setValue("XSSAuditing", ui->xssAuditing->isChecked());
     settings.setValue("enableFormsUndoRedo", ui->formsUndoRedo->isChecked());
 #ifdef Q_OS_WIN

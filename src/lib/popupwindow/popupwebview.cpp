@@ -23,6 +23,7 @@
 #include "tabbedwebview.h"
 #include "iconprovider.h"
 #include "enhancedmenu.h"
+#include "loadrequest.h"
 
 #include <QWebFrame>
 #include <QContextMenuEvent>
@@ -56,24 +57,20 @@ PopupWebPage* PopupWebView::webPage()
     return m_page;
 }
 
-QWidget* PopupWebView::overlayForJsAlert()
+QWidget* PopupWebView::overlayWidget()
 {
     return this;
 }
 
-void PopupWebView::loadInNewTab(const QNetworkRequest &req, QNetworkAccessManager::Operation op, const QByteArray &data, Qz::NewTabPositionFlags position)
+void PopupWebView::loadInNewTab(const LoadRequest &req, Qz::NewTabPositionFlags position)
 {
     Q_UNUSED(position)
 
     BrowserWindow* window = mApp->getWindow();
 
     if (window) {
-        QNetworkRequest r(req);
-        r.setRawHeader("Referer", url().toEncoded());
-        r.setRawHeader("X-QupZilla-UserLoadAction", QByteArray("1"));
-
         int index = window->tabWidget()->addView(QUrl(), Qz::NT_SelectedTab);
-        window->weView(index)->load(r, op, data);
+        window->weView(index)->load(req);
         window->raise();
     }
 }

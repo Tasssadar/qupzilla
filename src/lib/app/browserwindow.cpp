@@ -50,10 +50,8 @@
 #include "browsinglibrary.h"
 #include "navigationbar.h"
 #include "pagescreen.h"
-#include "webinspectordockwidget.h"
 #include "bookmarksimport/bookmarksimportdialog.h"
 #include "qztools.h"
-#include "actioncopy.h"
 #include "reloadstopbutton.h"
 #include "enhancedmenu.h"
 #include "navigationcontainer.h"
@@ -108,6 +106,7 @@ BrowserWindow::BrowserWindow(Qz::BrowserWindowType type, const QUrl &startUrl)
     , m_sideBarManager(new SideBarManager(this))
     , m_statusBarMessage(new StatusBarMessage(this))
     , m_useTransparentBackground(false)
+    , m_hideNavigationTimer(0)
 {
     setObjectName("mainwindow");
     setAttribute(Qt::WA_DeleteOnClose);
@@ -232,8 +231,8 @@ void BrowserWindow::postLaunch()
         }
     }
 
-    if (m_tabWidget->getTabBar()->normalTabsCount() <= 0 && m_windowType != Qz::BW_OtherRestoredWindow) {
-        // Something went really wrong .. add one tab
+    // Something went really wrong .. add one tab
+    if (m_tabWidget->tabBar()->normalTabsCount() <= 0) {
         QNetworkRequest request(m_homepage);
         request.setRawHeader("X-QupZilla-UserLoadAction", QByteArray("1"));
 
@@ -246,7 +245,7 @@ void BrowserWindow::postLaunch()
     raise();
     activateWindow();
 
-    QTimer::singleShot(0, tabWidget()->getTabBar(), SLOT(ensureVisible()));
+    QTimer::singleShot(0, tabWidget()->tabBar(), SLOT(ensureVisible()));
 }
 
 void BrowserWindow::setupUi()
@@ -301,7 +300,6 @@ void BrowserWindow::setupUi()
     m_mainLayout->setSpacing(0);
     m_mainSplitter = new QSplitter(this);
     m_mainSplitter->setObjectName("sidebar-splitter");
-    m_mainSplitter->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     m_tabWidget = new TabWidget(this);
     m_superMenu = new QMenu(this);
     m_navigationToolbar = new NavigationBar(this);
@@ -309,25 +307,19 @@ void BrowserWindow::setupUi()
     m_bookmarksToolbar = new BookmarksToolbar(this);
 
     m_navigationContainer = new NavigationContainer(this);
-    QVBoxLayout* l = new QVBoxLayout(m_navigationContainer);
-    l->setContentsMargins(0, 0, 0, 0);
-    l->setSpacing(0);
-    l->addWidget(m_navigationToolbar);
-    l->addWidget(m_bookmarksToolbar);
-    m_navigationContainer->setLayout(l);
+    m_navigationContainer->addWidget(m_navigationToolbar);
+    m_navigationContainer->addWidget(m_bookmarksToolbar);
+    m_navigationContainer->setTabBar(m_tabWidget->tabBar());
 
     m_mainSplitter->addWidget(m_tabWidget);
-    toggleTabsOnTop(qzSettings->tabsOnTop);
-    m_mainLayout->addWidget(m_mainSplitter);
     m_mainSplitter->setCollapsible(0, false);
+
+    m_mainLayout->addWidget(m_navigationContainer);
+    m_mainLayout->addWidget(m_mainSplitter);
 
     statusBar()->setObjectName("mainwindow-statusbar");
     statusBar()->setCursor(Qt::ArrowCursor);
     m_progressBar = new ProgressBar(statusBar());
-    m_privateBrowsing = new QLabel(this);
-    m_privateBrowsing->setPixmap(QPixmap(":/icons/locationbar/privatebrowsing.png"));
-    m_privateBrowsing->setVisible(false);
-    m_privateBrowsing->setToolTip(tr("Private Browsing Enabled"));
     m_adblockIcon = new AdBlockIcon(this);
     m_ipLabel = new QLabel(this);
     m_ipLabel->setObjectName("statusbar-ip-label");
@@ -335,7 +327,6 @@ void BrowserWindow::setupUi()
 
     statusBar()->addPermanentWidget(m_progressBar);
     statusBar()->addPermanentWidget(m_ipLabel);
-    statusBar()->addPermanentWidget(m_privateBrowsing);
     statusBar()->addPermanentWidget(m_adblockIcon);
 
     // Workaround for Oxygen tooltips not having transparent background
@@ -353,12 +344,6 @@ void BrowserWindow::setupMenu()
 {
     // TODO: Mac menu
 #ifdef Q_OS_MAC
-    ActionCopy* copyActionPrivateBrowsing = new ActionCopy(m_actionPrivateBrowsing);
-    copyActionPrivateBrowsing->setText(copyActionPrivateBrowsing->text().remove(QLatin1Char('&')));
-    mApp->macDockMenu()->addAction(copyActionPrivateBrowsing);
-    mApp->macDockMenu()->addAction(m_menuFile->actions().at(1));
-    mApp->macDockMenu()->addAction(m_menuFile->actions().at(0));
-
     return;
 #endif
     setMenuBar(new MenuBar(this));
@@ -422,6 +407,7 @@ void BrowserWindow::loadSettings()
     settings.beginGroup("Shortcuts");
     m_useTabNumberShortcuts = settings.value("useTabNumberShortcuts", true).toBool();
     m_useSpeedDialNumberShortcuts = settings.value("useSpeedDialNumberShortcuts", true).toBool();
+    m_useSingleKeyShortcuts = settings.value("useSingleKeyShortcuts", false).toBool();
     settings.endGroup();
 
     m_adblockIcon->setEnabled(settings.value("AdBlock/enabled", true).toBool());
@@ -441,15 +427,12 @@ void BrowserWindow::loadSettings()
 
     m_sideBarManager->showSideBar(activeSideBar, false);
 
-    // Private browsing
-    m_privateBrowsing->setVisible(mApp->isPrivate());
-
 #ifdef Q_OS_WIN
-    if (m_usingTransparentBackground && !makeTransparent) {
+    if (m_useTransparentBackground && !makeTransparent) {
         QtWin::extendFrameIntoClientArea(this, 0, 0, 0, 0);
         QtWin::enableBlurBehindWindow(this, false);
-        m_tabWidget->getTabBar()->enableBluredBackground(false);
-        m_usingTransparentBackground = false;
+        m_tabWidget->tabBar()->enableBluredBackground(false);
+        m_useTransparentBackground = false;
     }
 #endif
 
@@ -474,17 +457,17 @@ void BrowserWindow::loadSettings()
     if (QtWin::isCompositionEnabled()) {
         setContentsMargins(0, 0, 0, 0);
 
-        m_usingTransparentBackground = true;
+        m_useTransparentBackground = true;
 
         if (!isFullScreen()) {
-            m_tabWidget->getTabBar()->enableBluredBackground(true);
+            m_tabWidget->tabBar()->enableBluredBackground(true);
             QtWin::extendFrameIntoClientArea(this);
         }
 
         // Install event filters
         menuBar()->installEventFilter(this);
-        m_tabWidget->getTabBar()->installEventFilter(this);
-        m_navigationBar->installEventFilter(this);
+        m_tabWidget->tabBar()->installEventFilter(this);
+        m_navigationToolbar->installEventFilter(this);
         m_bookmarksToolbar->installEventFilter(this);
         statusBar()->installEventFilter(this);
         m_navigationContainer->installEventFilter(this);
@@ -533,7 +516,7 @@ TabbedWebView* BrowserWindow::weView(int index) const
         return 0;
     }
 
-    return webTab->view();
+    return webTab->webView();
 }
 
 LocationBar* BrowserWindow::locationBar() const
@@ -796,16 +779,8 @@ void BrowserWindow::toggleShowNavigationToolbar()
 
 void BrowserWindow::toggleTabsOnTop(bool enable)
 {
-    if (enable) {
-        m_mainLayout->insertWidget(0, m_tabWidget->getTabBar());
-        m_mainLayout->insertWidget(1, m_navigationContainer);
-    }
-    else {
-        m_mainLayout->insertWidget(0, m_navigationContainer);
-        m_mainLayout->insertWidget(1, m_tabWidget->getTabBar());
-    }
-
     qzSettings->tabsOnTop = enable;
+    m_navigationContainer->toggleTabsOnTop(enable);
 
 #ifdef Q_OS_WIN
     // workaround for changing TabsOnTop state when sidebar is visible
@@ -836,28 +811,11 @@ void BrowserWindow::toggleFullScreen()
     }
 }
 
-void BrowserWindow::showWebInspector(bool toggle)
+void BrowserWindow::showWebInspector()
 {
-    if (m_webInspectorDock) {
-        if (toggle) {
-            m_webInspectorDock.data()->toggleVisibility();
-        }
-        else  {
-            m_webInspectorDock.data()->show();
-        }
-        return;
+    if (weView() && weView()->webTab()) {
+        weView()->webTab()->showWebInspector();
     }
-
-    m_webInspectorDock = new WebInspectorDockWidget(this);
-    connect(m_tabWidget, SIGNAL(currentChanged(int)), m_webInspectorDock.data(), SLOT(tabChanged(int)));
-    addDockWidget(Qt::BottomDockWidgetArea, m_webInspectorDock.data());
-
-#ifdef Q_OS_WIN
-    if (QtWin::isCompositionEnabled()) {
-        applyBlurToMainWindow();
-        m_webInspectorDock.data()->installEventFilter(this);
-    }
-#endif
 }
 
 void BrowserWindow::refreshHistory()
@@ -872,7 +830,7 @@ void BrowserWindow::currentTabChanged()
         return;
     }
 
-    setWindowTitle(tr("%1 - QupZilla").arg(view->title()));
+    setWindowTitle(tr("%1 - QupZilla").arg(view->webTab()->title()));
     m_ipLabel->setText(view->getIp());
     view->setFocus();
 
@@ -1033,7 +991,7 @@ void BrowserWindow::searchOnPage()
     SearchToolBar* toolBar = searchToolBar();
 
     if (!toolBar) {
-        const int searchPos = 3;
+        const int searchPos = 2;
 
         toolBar = new SearchToolBar(weView(), this);
         m_mainLayout->insertWidget(searchPos, toolBar);
@@ -1081,7 +1039,6 @@ void BrowserWindow::showNavigationWithFullScreen()
     }
 
     m_navigationContainer->show();
-    m_tabWidget->getTabBar()->updateVisibilityWithFullscreen(true);
 }
 
 void BrowserWindow::hideNavigationWithFullScreen()
@@ -1098,7 +1055,6 @@ void BrowserWindow::hideNavigationSlot()
 
     if (isFullScreen() && mouseInView) {
         m_navigationContainer->hide();
-        m_tabWidget->getTabBar()->updateVisibilityWithFullscreen(false);
     }
 }
 
@@ -1116,14 +1072,13 @@ bool BrowserWindow::event(QEvent* event)
             m_statusBarVisible = statusBar()->isVisible();
             menuBar()->hide();
             statusBar()->hide();
+
             m_navigationContainer->hide();
-            m_tabWidget->getTabBar()->hide();
             m_navigationToolbar->setSuperMenuVisible(false);
-            m_hideNavigationTimer->stop();
             m_navigationToolbar->buttonExitFullscreen()->setVisible(true);
 #ifdef Q_OS_WIN
-            if (m_usingTransparentBackground) {
-                m_tabWidget->getTabBar()->enableBluredBackground(false);
+            if (m_useTransparentBackground) {
+                m_tabWidget->tabBar()->enableBluredBackground(false);
                 QtWin::extendFrameIntoClientArea(this, 0, 0, 0 , 0);
                 QtWin::enableBlurBehindWindow(this, false);
             }
@@ -1135,19 +1090,22 @@ bool BrowserWindow::event(QEvent* event)
 
             menuBar()->setVisible(m_menuBarVisible);
             statusBar()->setVisible(m_statusBarVisible);
+
             m_navigationContainer->show();
-            m_tabWidget->getTabBar()->updateVisibilityWithFullscreen(true);
-            m_tabWidget->getTabBar()->setVisible(true);
             m_navigationToolbar->setSuperMenuVisible(!m_menuBarVisible);
-            m_hideNavigationTimer->stop();
             m_navigationToolbar->buttonExitFullscreen()->setVisible(false);
 #ifdef Q_OS_WIN
-            if (m_usingTransparentBackground) {
-                m_tabWidget->getTabBar()->enableBluredBackground(true);
+            if (m_useTransparentBackground) {
+                m_tabWidget->tabBar()->enableBluredBackground(true);
                 applyBlurToMainWindow(true);
             }
 #endif
         }
+
+        if (m_hideNavigationTimer) {
+            m_hideNavigationTimer->stop();
+        }
+        break;
     }
 
     default:
@@ -1320,6 +1278,20 @@ void BrowserWindow::keyPressEvent(QKeyEvent* event)
         }
         break;
 
+    case Qt::Key_F:
+        if (event->modifiers() == Qt::ControlModifier) {
+            action(QSL("Edit/Find"))->trigger();
+            event->accept();
+        }
+        break;
+
+    case Qt::Key_Slash:
+        if (m_useSingleKeyShortcuts) {
+            action(QSL("Edit/Find"))->trigger();
+            event->accept();
+        }
+        break;
+
     case Qt::Key_1:
         number = 1;
         break;
@@ -1366,6 +1338,12 @@ void BrowserWindow::keyPressEvent(QKeyEvent* event)
                 loadAddress(url);
                 return;
             }
+        }
+        if (event->modifiers() == Qt::NoModifier && m_useSingleKeyShortcuts) {
+            if (number == 1)
+                m_tabWidget->previousTab();
+            if (number == 2)
+                m_tabWidget->nextTab();
         }
     }
 
@@ -1431,7 +1409,7 @@ void BrowserWindow::closeEvent(QCloseEvent* event)
 SearchToolBar* BrowserWindow::searchToolBar() const
 {
     SearchToolBar* toolBar = 0;
-    const int searchPos = 3;
+    const int searchPos = 2;
 
     if (m_mainLayout->count() == searchPos + 1) {
         toolBar = qobject_cast<SearchToolBar*>(m_mainLayout->itemAt(searchPos)->widget());
@@ -1587,9 +1565,9 @@ void BrowserWindow::applyBlurToMainWindow(bool force)
     }
 
     topMargin += menuBar()->isVisible() ? menuBar()->height() : 0;
-    topMargin += m_navigationBar->isVisible() ? m_navigationBar->height() : 0;
+    topMargin += m_navigationToolbar->isVisible() ? m_navigationToolbar->height() : 0;
     topMargin += m_bookmarksToolbar->isVisible() ? m_bookmarksToolbar->height() : 0;
-    topMargin += m_tabWidget->getTabBar()->height();
+    topMargin += m_tabWidget->tabBar()->height();
 
     SearchToolBar* search = searchToolBar();
     if (search) {
@@ -1597,13 +1575,6 @@ void BrowserWindow::applyBlurToMainWindow(bool force)
     }
 
     bottomMargin += statusBar()->isVisible() ? statusBar()->height() : 0;
-
-    if (m_webInspectorDock) {
-        bottomMargin += m_webInspectorDock.data()->isVisible()
-                        ? m_webInspectorDock.data()->height()
-                        + m_webInspectorDock.data()->style()->pixelMetric(QStyle::PM_DockWidgetSeparatorExtent)
-                        : 0;
-    }
 
     QtWin::extendFrameIntoClientArea(this, leftMargin, topMargin, rightMargin, bottomMargin);
 }
@@ -1620,9 +1591,9 @@ bool BrowserWindow::nativeEvent(const QByteArray &eventType, void* _message, lon
     if (message && message->message == WM_DWMCOMPOSITIONCHANGED) {
         Settings settings;
         settings.beginGroup("Browser-View-Settings");
-        m_usingTransparentBackground = settings.value("useTransparentBackground", false).toBool();
+        m_useTransparentBackground = settings.value("useTransparentBackground", false).toBool();
         settings.endGroup();
-        if (m_usingTransparentBackground && QtWin::isCompositionEnabled()) {
+        if (m_useTransparentBackground && QtWin::isCompositionEnabled()) {
             setUpdatesEnabled(false);
 
             QtWin::extendFrameIntoClientArea(this, 0, 0, 0, 0);
@@ -1630,7 +1601,7 @@ bool BrowserWindow::nativeEvent(const QByteArray &eventType, void* _message, lon
 
             //install event filter
             menuBar()->installEventFilter(this);
-            m_navigationBar->installEventFilter(this);
+            m_navigationToolbar->installEventFilter(this);
             m_bookmarksToolbar->installEventFilter(this);
             statusBar()->installEventFilter(this);
 
@@ -1643,10 +1614,6 @@ bool BrowserWindow::nativeEvent(const QByteArray &eventType, void* _message, lon
                 search->installEventFilter(this);
             }
 
-            if (m_webInspectorDock) {
-                m_webInspectorDock.data()->installEventFilter(this);
-            }
-
             if (isVisible()) {
                 hide();
                 show();
@@ -1654,7 +1621,7 @@ bool BrowserWindow::nativeEvent(const QByteArray &eventType, void* _message, lon
             setUpdatesEnabled(true);
         }
         else {
-            m_usingTransparentBackground = false;
+            m_useTransparentBackground = false;
         }
     }
 #if (QT_VERSION < 0x050000)
@@ -1680,13 +1647,13 @@ bool BrowserWindow::eventFilter(QObject* object, QEvent* event)
     switch (event->type()) {
     case QEvent::Hide:
         if (object == m_navigationContainer) {
-            m_navigationBar->removeEventFilter(this);
+            m_navigationToolbar->removeEventFilter(this);
             m_bookmarksToolbar->removeEventFilter(this);
             break;
         }
     case QEvent::Show:
         if (object == m_navigationContainer) {
-            m_navigationBar->installEventFilter(this);
+            m_navigationToolbar->installEventFilter(this);
             m_bookmarksToolbar->installEventFilter(this);
             break;
         }

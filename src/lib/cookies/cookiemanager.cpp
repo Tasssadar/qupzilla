@@ -22,6 +22,7 @@
 #include "mainapplication.h"
 #include "qztools.h"
 #include "settings.h"
+#include "iconprovider.h"
 
 #include <QNetworkCookie>
 #include <QMessageBox>
@@ -70,7 +71,7 @@ CookieManager::CookieManager(QWidget* parent)
         ui->deleteCookiesOnClose->setEnabled(false);
     }
     ui->deleteCookiesOnClose->setChecked(settings.value("deleteCookiesOnClose", false).toBool());
-    ui->matchExactly->setChecked(settings.value("allowCookiesFromVisitedDomainOnly", false).toBool());
+    ui->filter3rdParty->setChecked(settings.value("allowCookiesFromVisitedDomainOnly", false).toBool());
     ui->filterTracking->setChecked(settings.value("filterTrackingCookie", false).toBool());
     settings.endGroup();
 
@@ -202,7 +203,7 @@ void CookieManager::slotRefreshTable()
         else {
             QTreeWidgetItem* newParent = new QTreeWidgetItem(ui->cookieTree);
             newParent->setText(0, cookieDomain);
-            newParent->setIcon(0, style()->standardIcon(QStyle::SP_DirIcon));
+            newParent->setIcon(0, IconProvider::standardIcon(QStyle::SP_DirIcon));
             newParent->setData(0, Qt::UserRole + 10, cookie.domain());
             ui->cookieTree->addTopLevelItem(newParent);
             hash[cookieDomain] = newParent;
@@ -326,7 +327,7 @@ void CookieManager::closeEvent(QCloseEvent* e)
     settings.beginGroup("Cookie-Settings");
     settings.setValue("allowCookies", ui->saveCookies->isChecked());
     settings.setValue("deleteCookiesOnClose", ui->deleteCookiesOnClose->isChecked());
-    settings.setValue("allowCookiesFromVisitedDomainOnly", ui->matchExactly->isChecked());
+    settings.setValue("allowCookiesFromVisitedDomainOnly", ui->filter3rdParty->isChecked());
     settings.setValue("filterTrackingCookie", ui->filterTracking->isChecked());
     settings.setValue("whitelist", whitelist);
     settings.setValue("blacklist", blacklist);

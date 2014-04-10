@@ -41,7 +41,7 @@ PluginSpec GM_Plugin::pluginSpec()
     spec.name = "GreaseMonkey";
     spec.info = "Userscripts for QupZilla";
     spec.description = "Provides support for userscripts (www.userscripts.org)";
-    spec.version = "0.4.3";
+    spec.version = "0.4.4";
     spec.author = "David Rosca <nowrep@gmail.com>";
     spec.icon = QPixmap(":gm/data/icon.png");
     spec.hasSettings = true;
@@ -66,7 +66,7 @@ void GM_Plugin::init(InitState state, const QString &settingsPath)
             for (int i = 0; i < window->tabWidget()->count(); ++i) {
                 WebTab* tab = qobject_cast<WebTab*>(window->tabWidget()->widget(i));
                 if (tab) {
-                    webPageCreated(tab->view()->page());
+                    webPageCreated(tab->webView()->page());
                 }
             }
         }

@@ -1219,20 +1219,7 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QSpinBox" name="defaultZoom">
-                   <property name="suffix">
-                    <string notr="true"> %</string>
-                   </property>
-                   <property name="minimum">
-                    <number>30</number>
-                   </property>
-                   <property name="maximum">
-                    <number>300</number>
-                   </property>
-                   <property name="value">
-                    <number>100</number>
-                   </property>
-                  </widget>
+                  <widget class="QComboBox" name="defaultZoomLevel"/>
                  </item>
                  <item>
                   <spacer name="horizontalSpacer_12">
@@ -2000,7 +1987,17 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="1">
+           <item row="4" column="0" colspan="2">
+            <widget class="QCheckBox" name="singleKeyShortcuts">
+             <property name="toolTip">
+              <string>Existing shortcuts:&lt;br/>&lt;b>1&lt;/b> - previous tab&lt;br/>&lt;b>2&lt;/b> - next tab&lt;br/>&lt;b>/&lt;/b> - search/find</string>
+             </property>
+             <property name="text">
+              <string>Use single key shortcuts</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
             <spacer name="verticalSpacer_13">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -2777,7 +2774,6 @@
   <tabstop>tabWidget</tabstop>
   <tabstop>allowPlugins</tabstop>
   <tabstop>wheelScroll</tabstop>
-  <tabstop>defaultZoom</tabstop>
   <tabstop>fontStandard</tabstop>
   <tabstop>fontFixed</tabstop>
   <tabstop>fontSerif</tabstop>

@@ -39,8 +39,6 @@ SiteIcon::SiteIcon(BrowserWindow* window, LocationBar* parent)
     setToolTip(LocationBar::tr("Show information about this page"));
     setFocusPolicy(Qt::ClickFocus);
 
-    connect(this, SIGNAL(clicked()), this, SLOT(iconClicked()));
-
     m_updateTimer = new QTimer(this);
     m_updateTimer->setInterval(100);
     m_updateTimer->setSingleShot(true);
@@ -66,25 +64,14 @@ void SiteIcon::setIcon(const QIcon &icon)
     }
 }
 
-void SiteIcon::iconClicked()
-{
-    if (!m_view || !m_window) {
-        return;
-    }
-
-    QUrl url = m_view->url();
-
-    if (url.isEmpty() || url.scheme() == QLatin1String("qupzilla")) {
-        return;
-    }
-
-    SiteInfoWidget* info = new SiteInfoWidget(m_window);
-    info->showAt(parentWidget());
-}
-
 void SiteIcon::updateIcon()
 {
     ToolButton::setIcon(m_icon);
+}
+
+void SiteIcon::popupClosed()
+{
+    setDown(false);
 }
 
 void SiteIcon::contextMenuEvent(QContextMenuEvent* e)
@@ -103,6 +90,30 @@ void SiteIcon::mousePressEvent(QMouseEvent* e)
     e->accept();
 
     ToolButton::mousePressEvent(e);
+}
+
+void SiteIcon::mouseReleaseEvent(QMouseEvent* e)
+{
+    // Mouse release event is restoring Down state
+    // So we pause updates to prevent flicker
+
+    bool activated = false;
+
+    if (e->button() == Qt::LeftButton && rect().contains(e->pos())) {
+        // Popup may not be always shown, eg. on qupzilla: pages
+        activated = showPopup();
+    }
+
+    if (activated) {
+        setUpdatesEnabled(false);
+    }
+
+    ToolButton::mouseReleaseEvent(e);
+
+    if (activated) {
+        setDown(true);
+        setUpdatesEnabled(true);
+    }
 }
 
 void SiteIcon::mouseMoveEvent(QMouseEvent* e)
@@ -134,6 +145,30 @@ void SiteIcon::mouseMoveEvent(QMouseEvent* e)
 
     drag->setMimeData(mime);
     drag->setPixmap(QzTools::createPixmapForSite(icon(), title, url.toString()));
-
     drag->exec();
+
+    // Restore Down state
+    setDown(false);
+}
+
+bool SiteIcon::showPopup()
+{
+    if (!m_view || !m_window) {
+        return false;
+    }
+
+    QUrl url = m_view->url();
+
+    if (url.isEmpty() || url.scheme() == QLatin1String("qupzilla")) {
+        return false;
+    }
+
+    setDown(true);
+
+    SiteInfoWidget* info = new SiteInfoWidget(m_window);
+    info->showAt(parentWidget());
+
+    connect(info, SIGNAL(destroyed()), this, SLOT(popupClosed()));
+
+    return true;
 }

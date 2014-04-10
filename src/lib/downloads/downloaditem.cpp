@@ -22,7 +22,6 @@
 #include "tabwidget.h"
 #include "webpage.h"
 #include "downloadmanager.h"
-#include "iconprovider.h"
 #include "networkmanager.h"
 #include "qztools.h"
 #include "schemehandlers/ftpschemehandler.h"
@@ -72,7 +71,7 @@ DownloadItem::DownloadItem(QListWidgetItem* item, QNetworkReply* reply, const QS
     ui->setupUi(this);
     setMaximumWidth(525);
 
-    ui->button->setPixmap(IconProvider::standardIcon(QStyle::SP_BrowserStop).pixmap(20, 20));
+    ui->button->setPixmap(QIcon::fromTheme(QSL("process-stop")).pixmap(20, 20));
     ui->fileName->setText(m_fileName);
     ui->downloadInfo->setText(tr("Remaining time unavailable"));
     ui->fileIcon->setPixmap(fileIcon);
@@ -184,7 +183,7 @@ void DownloadItem::finished()
     m_timer.stop();
 
     QString host = m_reply ? m_reply->url().host() : m_ftpDownloader->url().host();
-    ui->downloadInfo->setText(tr("Done - %1").arg(host));
+    ui->downloadInfo->setText(tr("Done - %1 (%2)").arg(host, QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate)));
     ui->progressBar->hide();
     ui->button->hide();
     ui->frame->hide();
@@ -378,7 +377,7 @@ void DownloadItem::customContextMenuRequested(const QPoint &pos)
     menu.addAction(tr("Go to Download Page"), this, SLOT(goToDownloadPage()))->setEnabled(!m_downloadPage.isEmpty());
     menu.addAction(QIcon::fromTheme("edit-copy"), tr("Copy Download Link"), this, SLOT(copyDownloadLink()));
     menu.addSeparator();
-    menu.addAction(IconProvider::standardIcon(QStyle::SP_BrowserStop), tr("Cancel downloading"), this, SLOT(stop()))->setEnabled(m_downloading);
+    menu.addAction(QIcon::fromTheme("process-stop"), tr("Cancel downloading"), this, SLOT(stop()))->setEnabled(m_downloading);
     menu.addAction(QIcon::fromTheme("list-remove"), tr("Remove From List"), this, SLOT(clear()))->setEnabled(!m_downloading);
 
     if (m_downloading || ui->downloadInfo->text().startsWith(tr("Cancelled")) || ui->downloadInfo->text().startsWith(tr("Error"))) {
@@ -470,7 +469,10 @@ void DownloadItem::updateDownload()
     // after caling stop() (from readyRead()) m_reply will be a dangling pointer,
     // thus it should be checked after m_outputFile.isOpen()
     if (ui->progressBar->maximum() == 0 && m_outputFile.isOpen() &&
-            ((m_reply && m_reply->isFinished()) || (m_ftpDownloader && m_ftpDownloader->isFinished()))) {
+        ((m_reply && m_reply->isFinished()) ||
+         (m_ftpDownloader && m_ftpDownloader->isFinished())
+        )
+       ) {
         downloadProgress(0, 0);
         finished();
     }

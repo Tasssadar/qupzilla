@@ -187,9 +187,10 @@ void AKN_Handler::handleAccessKey(QKeyEvent* event)
         other = key.toLower();
     }
 
-    if (!other.isNull()
-            && m_accessKeyNodes.contains(other)
-            && !m_accessKeyNodes.contains(key)) {
+    if (!other.isNull() &&
+        m_accessKeyNodes.contains(other) &&
+        !m_accessKeyNodes.contains(key)
+       ) {
         key = other;
     }
 
@@ -253,8 +254,9 @@ void AKN_Handler::showAccessKeys()
         QList<QWebElement> result = page->currentFrame()->findAllElements(elementType).toList();
         foreach (const QWebElement &element, result) {
             const QRect geometry = element.geometry();
-            if (geometry.size().isEmpty()
-                    || !viewport.contains(geometry.topLeft())) {
+            if (geometry.size().isEmpty() ||
+                !viewport.contains(geometry.topLeft())
+               ) {
                 continue;
             }
             QString accessKeyAttribute = element.attribute(QLatin1String("accesskey")).toUpper();
@@ -284,10 +286,11 @@ void AKN_Handler::showAccessKeys()
         QWebElementCollection result = page->currentFrame()->findAllElements(elementType);
         foreach (const QWebElement &element, result) {
             const QRect geometry = element.geometry();
-            if (unusedKeys.isEmpty()
-                    || alreadyLabeled.contains(element)
-                    || geometry.size().isEmpty()
-                    || !viewport.contains(geometry.topLeft())) {
+            if (unusedKeys.isEmpty() ||
+                alreadyLabeled.contains(element) ||
+                geometry.size().isEmpty() ||
+                !viewport.contains(geometry.topLeft())
+               ) {
                 continue;
             }
             QChar accessKey;
@@ -352,7 +355,7 @@ void AKN_Handler::hideAccessKeys()
 
 void AKN_Handler::makeAccessKeyLabel(const QChar &accessKey, const QWebElement &element)
 {
-    QLabel* label = new QLabel(m_view.data());
+    QLabel* label = new QLabel(m_view.data()->overlayWidget());
     label->setText(QString(QLatin1String("<b>%1</b>")).arg(accessKey));
 
     QPalette p = QToolTip::palette();
@@ -365,8 +368,8 @@ void AKN_Handler::makeAccessKeyLabel(const QChar &accessKey, const QWebElement &
     label->setFrameStyle(QFrame::Box | QFrame::Plain);
     QPoint point = element.geometry().center();
     point -= m_view.data()->page()->currentFrame()->scrollPosition();
-    label->move(point);
     label->show();
+    label->resize(label->sizeHint());
     point.setX(point.x() - label->width() / 2);
     label->move(point);
     m_accessKeyLabels.append(label);

@@ -28,6 +28,7 @@
 #include "searchenginesmanager.h"
 #include "searchenginesdialog.h"
 #include "networkmanager.h"
+#include "iconprovider.h"
 
 #include <QMimeData>
 #include <QAbstractItemView>
@@ -106,7 +107,7 @@ void WebSearchBar::aboutToShowMenu()
     menu->addSeparator();
     completeMenuWithAvailableEngines(menu);
     menu->addSeparator();
-    menu->addAction(QIcon(":icons/menu/gear.png"), tr("Manage Search Engines"), this, SLOT(openSearchEnginesDialog()));
+    menu->addAction(IconProvider::settingsIcon(), tr("Manage Search Engines"), this, SLOT(openSearchEnginesDialog()));
 }
 
 void WebSearchBar::addSuggestions(const QStringList &list)
@@ -204,19 +205,14 @@ void WebSearchBar::instantSearchChanged(bool enable)
 void WebSearchBar::search()
 {
     m_window->weView()->setFocus();
-
-    SearchEnginesManager::SearchResult res = m_searchManager->searchResult(m_activeEngine, text());
-    m_window->weView()->load(res.request, res.operation, res.data);
+    m_window->weView()->load(m_searchManager->searchResult(m_activeEngine, text()));
 }
 
 void WebSearchBar::searchInNewTab()
 {
-    m_window->weView()->setFocus();
-
     int index = m_window->tabWidget()->addView(QUrl());
-
-    SearchEnginesManager::SearchResult res = m_searchManager->searchResult(m_activeEngine, text());
-    m_window->weView(index)->load(res.request, res.operation, res.data);
+    m_window->weView(index)->setFocus();
+    m_window->weView(index)->load(m_searchManager->searchResult(m_activeEngine, text()));
 }
 
 void WebSearchBar::completeMenuWithAvailableEngines(QMenu* menu)
