@@ -22,6 +22,8 @@
 #include "webpage.h"
 #include "tabwidget.h"
 #include "bookmarksicon.h"
+#include "bookmarks.h"
+#include "bookmarkitem.h"
 #include "siteicon.h"
 #include "goicon.h"
 #include "rssicon.h"
@@ -177,14 +179,20 @@ LoadRequest LocationBar::createLoadRequest() const
         }
     }
 
+    // Check for Bookmark keyword
+    QList<BookmarkItem*> items = mApp->bookmarks()->searchKeyword(text());
+    if (!items.isEmpty()) {
+        BookmarkItem* item = items.first();
+        item->updateVisitCount();
+        req.setUrl(item->url());
+    }
+
     if (req.isEmpty()) {
-        QUrl guessedUrl = WebView::guessUrlFromString(text());
-        if (!guessedUrl.isEmpty()) {
+        const QUrl guessedUrl = WebView::guessUrlFromString(text());
+        if (!guessedUrl.isEmpty())
             req.setUrl(guessedUrl);
-        }
-        else {
+        else
             req.setUrl(QUrl::fromEncoded(text().toUtf8()));
-        }
     }
 
     return req;
@@ -308,6 +316,7 @@ void LocationBar::showUrl(const QUrl &url)
 
     if (text() == stringUrl) {
         home(false);
+        refreshTextFormat();
         return;
     }
 
@@ -594,6 +603,9 @@ void LocationBar::paintEvent(QPaintEvent* event)
 
         QPainter p(this);
         p.setBrush(QBrush(bg));
+
+        // We are painting over text, make sure the text stays visible
+        p.setOpacity(0.5);
 
         QPen outlinePen(bg.darker(110), 0.8);
         p.setPen(outlinePen);

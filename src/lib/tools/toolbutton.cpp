@@ -17,211 +17,210 @@
 * ============================================================ */
 #include "toolbutton.h"
 
-#include <QMouseEvent>
 #include <QMenu>
+#include <QStyle>
 #include <QPainter>
+#include <QMouseEvent>
 #include <QApplication>
 #include <QStyleOptionToolButton>
 
 ToolButton::ToolButton(QWidget* parent)
     : QToolButton(parent)
-    , m_usingMultiIcon(false)
-    , m_showMenuInside(false)
-    , m_forceHidden(false)
+    , m_menu(0)
 {
     setMinimumWidth(16);
+
+    QStyleOptionToolButton opt;
+    initStyleOption(&opt);
+
+    m_pressTimer.setSingleShot(true);
+    m_pressTimer.setInterval(QApplication::style()->styleHint(QStyle::SH_ToolButton_PopupDelay, &opt, this));
+    connect(&m_pressTimer, SIGNAL(timeout()), this, SLOT(showMenu()));
 }
 
-void ToolButton::setThemeIcon(const QString &image)
+QImage ToolButton::multiIcon() const
 {
-    m_themeIcon = image;
-    setIcon(QIcon::fromTheme(image));
-    m_usingMultiIcon = false;
+    return m_multiIcon;
 }
 
-void ToolButton::setFallbackIcon(const QIcon &image)
+void ToolButton::setMultiIcon(const QImage &image)
 {
-    if (icon().isNull()) {
-        setIcon(image);
-        m_usingMultiIcon = false;
-    }
+    m_options |= MultiIconOption;
+    m_multiIcon = image;
+    setFixedSize(m_multiIcon.width(), m_multiIcon.height() / 4);
+
+    update();
 }
 
-void ToolButton::setIcon(const QIcon &image)
+QString ToolButton::themeIcon() const
 {
-    if (m_usingMultiIcon) {
+    return m_themeIcon;
+}
+
+void ToolButton::setThemeIcon(const QString &icon)
+{
+    m_themeIcon = icon;
+    setIcon(QIcon::fromTheme(m_themeIcon));
+}
+
+QIcon ToolButton::icon() const
+{
+    return QToolButton::icon();
+}
+
+void ToolButton::setIcon(const QIcon &icon)
+{
+    if (m_options & MultiIconOption)
         setFixedSize(sizeHint());
-    }
-    m_usingMultiIcon = false;
 
-    QToolButton::setIcon(image);
+    m_options &= ~MultiIconOption;
+    QToolButton::setIcon(icon);
 }
 
-void ToolButton::setMenu(QMenu* m)
+QMenu* ToolButton::menu() const
 {
-    if (m) {
-        connect(m, SIGNAL(aboutToHide()), this, SLOT(menuAboutToHide()));
-    }
-    else if (menu()) {
-        disconnect(menu(), SIGNAL(aboutToHide()), this, SLOT(menuAboutToHide()));
-    }
-
-    QToolButton::setMenu(m);
+    return m_menu;
 }
 
-void ToolButton::setShowMenuInside(bool inside)
+void ToolButton::setMenu(QMenu* menu)
 {
-    m_showMenuInside = inside;
+    Q_ASSERT(menu);
+
+    if (m_menu)
+        disconnect(m_menu, SIGNAL(aboutToHide()), this, SLOT(menuAboutToHide()));
+
+    m_menu = menu;
+    connect(m_menu, SIGNAL(aboutToHide()), this, SLOT(menuAboutToHide()));
 }
 
 bool ToolButton::showMenuInside() const
 {
-    return m_showMenuInside;
+    return m_options & ShowMenuInsideOption;
 }
 
-void ToolButton::setVisible(bool visible)
+void ToolButton::setShowMenuInside(bool enable)
 {
-    QToolButton::setVisible(!m_forceHidden && visible);
+    if (enable)
+        m_options |= ShowMenuInsideOption;
+    else
+        m_options &= ~ShowMenuInsideOption;
 }
 
-bool ToolButton::isForceHidden()
+bool ToolButton::toolbarButtonLook() const
 {
-    return m_forceHidden;
+    return m_options & ToolBarLookOption;
 }
 
-void ToolButton::setForceHidden(bool enable)
+void ToolButton::setToolbarButtonLook(bool enable)
 {
-    m_forceHidden = enable;
-    if (m_forceHidden) {
-        hide();
+    if (enable) {
+        m_options |= ToolBarLookOption;
+
+        QStyleOption opt;
+        opt.initFrom(this);
+        int size = style()->pixelMetric(QStyle::PM_ToolBarIconSize, &opt, this);
+        setIconSize(QSize(size, size));
     }
+    else {
+        m_options &= ~ToolBarLookOption;
+    }
+
+    setProperty("toolbar-look", QVariant(enable));
+    style()->unpolish(this);
+    style()->polish(this);
 }
 
-void ToolButton::setData(const QVariant &data)
+void ToolButton::menuAboutToHide()
 {
-    m_data = data;
+    setDown(false);
+    emit aboutToHideMenu();
 }
 
-QVariant ToolButton::data()
+void ToolButton::showMenu()
 {
-    return m_data;
-}
+    if (!m_menu || m_menu->isVisible())
+        return;
 
-void ToolButton::setMultiIcon(const QPixmap &image)
-{
-    int w = image.width();
-    int h = image.height();
+    emit aboutToShowMenu();
 
-    m_normalIcon = image.copy(0, 0, w, h / 4);
-    m_hoverIcon = image.copy(0, h / 4, w, h / 4);
-    m_activeIcon = image.copy(0, h / 2, w, h / 4);
-    m_disabledIcon = image.copy(0, 3 * h / 4, w, h / 4);
+    QPoint pos;
 
-    m_usingMultiIcon = true;
+    if (m_options & ShowMenuInsideOption) {
+        pos = mapToGlobal(rect().bottomRight());
+        if (QApplication::layoutDirection() == Qt::RightToLeft)
+            pos.setX(pos.x() - rect().width());
+        else
+            pos.setX(pos.x() - m_menu->sizeHint().width());
+    }
+    else {
+        pos = mapToGlobal(rect().bottomLeft());
+    }
 
-    setFixedSize(m_normalIcon.size());
+    m_menu->popup(pos);
 }
 
 void ToolButton::mousePressEvent(QMouseEvent* e)
 {
+    QToolButton::mousePressEvent(e);
+
+    if (popupMode() == QToolButton::DelayedPopup)
+        m_pressTimer.start();
+
     if (e->buttons() == Qt::LeftButton && menu() && popupMode() == QToolButton::InstantPopup) {
         setDown(true);
         showMenu();
-        return;
     }
-
-    if (e->buttons() == Qt::RightButton && menu()) {
+    else if (e->buttons() == Qt::RightButton && menu()) {
         setDown(true);
         showMenu();
-        return;
     }
-
-    QToolButton::mousePressEvent(e);
 }
 
 void ToolButton::mouseReleaseEvent(QMouseEvent* e)
 {
+    QToolButton::mouseReleaseEvent(e);
+
+    m_pressTimer.stop();
+
     if (e->button() == Qt::MiddleButton && rect().contains(e->pos())) {
         emit middleMouseClicked();
         setDown(false);
-        return;
     }
-
-    if (e->button() == Qt::LeftButton && rect().contains(e->pos()) && e->modifiers() == Qt::ControlModifier) {
+    else if (e->button() == Qt::LeftButton && rect().contains(e->pos()) && e->modifiers() == Qt::ControlModifier) {
         emit controlClicked();
         setDown(false);
-        return;
     }
-
-    QToolButton::mouseReleaseEvent(e);
 }
 
 void ToolButton::mouseDoubleClickEvent(QMouseEvent* e)
 {
     QToolButton::mouseDoubleClickEvent(e);
 
+    m_pressTimer.stop();
+
     if (e->buttons() == Qt::LeftButton) {
         emit doubleClicked();
     }
 }
 
-void ToolButton::showMenu()
-{
-    if (!m_showMenuInside) {
-        QToolButton::showMenu();
-        return;
-    }
-
-    QMenu* m = menu();
-
-    if (!m) {
-        return;
-    }
-
-    emit aboutToShowMenu();
-
-    QPoint pos = mapToGlobal(rect().bottomRight());
-    if (QApplication::layoutDirection() == Qt::RightToLeft) {
-        pos.setX(pos.x() - rect().width());
-    }
-    else {
-        pos.setX(pos.x() - m->sizeHint().width());
-    }
-
-    m->popup(pos);
-}
-
-void ToolButton::menuAboutToHide()
-{
-    setDown(false);
-}
-
 void ToolButton::paintEvent(QPaintEvent* e)
 {
-    if (!m_usingMultiIcon) {
+    if (!(m_options & MultiIconOption)) {
         QToolButton::paintEvent(e);
         return;
     }
 
     QPainter p(this);
 
-    QStyleOptionToolButton opt;
-    opt.init(this);
+    const int w = m_multiIcon.width();
+    const int h4 = m_multiIcon.height() / 4;
 
-    if (!isEnabled()) {
-        p.drawPixmap(0, 0, m_disabledIcon);
-        return;
-    }
-
-    if (isDown()) {
-        p.drawPixmap(0, 0, m_activeIcon);
-        return;
-    }
-
-    if (opt.state & QStyle::State_MouseOver) {
-        p.drawPixmap(0, 0, m_hoverIcon);
-        return;
-    }
-
-    p.drawPixmap(0, 0, m_normalIcon);
+    if (!isEnabled())
+        p.drawImage(0, 0, m_multiIcon, 0, h4 * 3, w, h4);
+    else if (isDown())
+        p.drawImage(0, 0, m_multiIcon, 0, h4 * 2, w, h4);
+    else if (underMouse())
+        p.drawImage(0, 0, m_multiIcon, 0, h4 * 1, w, h4);
+    else
+        p.drawImage(0, 0, m_multiIcon, 0, h4 * 0, w, h4);
 }

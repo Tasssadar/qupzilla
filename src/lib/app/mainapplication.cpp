@@ -108,7 +108,7 @@ MainApplication::MainApplication(int &argc, char** argv)
     setApplicationName(QLatin1String("QupZilla"));
     setApplicationVersion(Qz::VERSION);
     setOrganizationDomain(QLatin1String("qupzilla"));
-    setWindowIcon(QIcon(QLatin1String(":icons/exeicons/qupzilla-window.png")));
+    setWindowIcon(QIcon::fromTheme(QSL("qupzilla"), QIcon(QSL(":icons/exeicons/qupzilla-window.png"))));
 
     // Set fallback icon theme (eg. on Windows/Mac)
     if (QIcon::fromTheme(QSL("view-refresh")).isNull()) {
@@ -923,13 +923,10 @@ void MainApplication::loadTheme(const QString &name)
 
     QString qss = QzTools::readAllFileContents(activeThemePath + QLatin1String("/main.css"));
 
-    // #id[style=QtStyle] (QtStyle = QMacStyle, QWindowsVistaStyle, QGtkStyle, ...)
-    // should be enough instead of loading special stylesheets
-
 #if defined(Q_OS_MAC)
-    qss.append(QzTools::readAllFileContents(activeThemePath + QLatin1String("/linux.css")));
-#elif defined(Q_OS_UNIX)
     qss.append(QzTools::readAllFileContents(activeThemePath + QLatin1String("/mac.css")));
+#elif defined(Q_OS_UNIX)
+    qss.append(QzTools::readAllFileContents(activeThemePath + QLatin1String("/linux.css")));
 #elif defined(Q_OS_WIN) || defined(Q_OS_OS2)
     qss.append(QzTools::readAllFileContents(activeThemePath + QLatin1String("/windows.css")));
 #endif
@@ -939,7 +936,7 @@ void MainApplication::loadTheme(const QString &name)
     }
 
     QString relativePath = QDir::current().relativeFilePath(activeThemePath);
-    qss.replace(QzRegExp(QLatin1String("url\\s*\\(\\s*([^\\*:\\);]+)\\s*\\)"), Qt::CaseSensitive), QString("url(%1\\1)").arg(relativePath + "/"));
+    qss.replace(QzRegExp(QSL("url\\s*\\(\\s*([^\\*:\\);]+)\\s*\\)"), Qt::CaseSensitive), QString("url(%1/\\1)").arg(relativePath));
     setStyleSheet(qss);
 }
 

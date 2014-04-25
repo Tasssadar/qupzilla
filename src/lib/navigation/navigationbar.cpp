@@ -37,14 +37,6 @@
 #include <QMouseEvent>
 #include <QStyleOption>
 
-static void setButtonIconSize(ToolButton* button)
-{
-    QStyleOption opt;
-    opt.initFrom(button);
-    int size = button->style()->pixelMetric(QStyle::PM_ToolBarIconSize, &opt, button);
-    button->setIconSize(QSize(size, size));
-}
-
 NavigationBar::NavigationBar(BrowserWindow* window)
     : QWidget(window)
     , m_window(window)
@@ -60,63 +52,64 @@ NavigationBar::NavigationBar(BrowserWindow* window)
     m_buttonBack->setObjectName("navigation-button-back");
     m_buttonBack->setToolTip(tr("Back"));
     m_buttonBack->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    m_buttonBack->setToolbarButtonLook(true);
     m_buttonBack->setAutoRaise(true);
     m_buttonBack->setEnabled(false);
     m_buttonBack->setFocusPolicy(Qt::NoFocus);
-    setButtonIconSize(m_buttonBack);
 
-    m_buttonNext = new ToolButton(this);
-    m_buttonNext->setObjectName("navigation-button-next");
-    m_buttonNext->setToolTip(tr("Forward"));
-    m_buttonNext->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    m_buttonNext->setAutoRaise(true);
-    m_buttonNext->setEnabled(false);
-    m_buttonNext->setFocusPolicy(Qt::NoFocus);
-    setButtonIconSize(m_buttonNext);
+    m_buttonForward = new ToolButton(this);
+    m_buttonForward->setObjectName("navigation-button-next");
+    m_buttonForward->setToolTip(tr("Forward"));
+    m_buttonForward->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    m_buttonForward->setToolbarButtonLook(true);
+    m_buttonForward->setAutoRaise(true);
+    m_buttonForward->setEnabled(false);
+    m_buttonForward->setFocusPolicy(Qt::NoFocus);
 
     QHBoxLayout* backNextLayout = new QHBoxLayout();
     backNextLayout->setContentsMargins(0, 0, 0, 0);
     backNextLayout->setSpacing(0);
     backNextLayout->addWidget(m_buttonBack);
-    backNextLayout->addWidget(m_buttonNext);
+    backNextLayout->addWidget(m_buttonForward);
 
     m_reloadStop = new ReloadStopButton(this);
-    setButtonIconSize(m_reloadStop->buttonReload());
-    setButtonIconSize(m_reloadStop->buttonStop());
 
     m_buttonHome = new ToolButton(this);
     m_buttonHome->setObjectName("navigation-button-home");
     m_buttonHome->setToolTip(tr("Home"));
     m_buttonHome->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    m_buttonHome->setToolbarButtonLook(true);
     m_buttonHome->setAutoRaise(true);
     m_buttonHome->setFocusPolicy(Qt::NoFocus);
-    setButtonIconSize(m_buttonHome);
 
     m_buttonAddTab = new ToolButton(this);
     m_buttonAddTab->setObjectName("navigation-button-addtab");
     m_buttonAddTab->setToolTip(tr("New Tab"));
     m_buttonAddTab->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    m_buttonAddTab->setToolbarButtonLook(true);
     m_buttonAddTab->setAutoRaise(true);
     m_buttonAddTab->setFocusPolicy(Qt::NoFocus);
-    setButtonIconSize(m_buttonAddTab);
 
     m_menuBack = new Menu(this);
     m_menuBack->setCloseOnMiddleClick(true);
     m_buttonBack->setMenu(m_menuBack);
+    connect(m_buttonBack, SIGNAL(aboutToShowMenu()), this, SLOT(aboutToShowHistoryBackMenu()));
+
     m_menuForward = new Menu(this);
     m_menuForward->setCloseOnMiddleClick(true);
-    m_buttonNext->setMenu(m_menuForward);
+    m_buttonForward->setMenu(m_menuForward);
+    connect(m_buttonForward, SIGNAL(aboutToShowMenu()), this, SLOT(aboutToShowHistoryNextMenu()));
 
 #ifndef Q_OS_MAC
     m_supMenu = new ToolButton(this);
     m_supMenu->setObjectName("navigation-button-supermenu");
     m_supMenu->setPopupMode(QToolButton::InstantPopup);
+    m_supMenu->setToolbarButtonLook(true);
     m_supMenu->setToolTip(tr("Main Menu"));
     m_supMenu->setAutoRaise(true);
     m_supMenu->setFocusPolicy(Qt::NoFocus);
     m_supMenu->setMenu(m_window->superMenu());
     m_supMenu->setShowMenuInside(true);
-    setButtonIconSize(m_supMenu);
 #endif
 
     m_searchLine = new WebSearchBar(m_window);
@@ -128,14 +121,14 @@ NavigationBar::NavigationBar(BrowserWindow* window)
     m_navigationSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     m_navigationSplitter->setCollapsible(0, false);
 
-    m_exitFullscreen = new ToolButton();
+    m_exitFullscreen = new ToolButton(this);
     m_exitFullscreen->setObjectName("navigation-button-exitfullscreen");
     m_exitFullscreen->setToolTip(tr("Exit Fullscreen"));
     m_exitFullscreen->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    m_exitFullscreen->setToolbarButtonLook(true);
     m_exitFullscreen->setFocusPolicy(Qt::NoFocus);
     m_exitFullscreen->setAutoRaise(true);
     m_exitFullscreen->setVisible(false);
-    setButtonIconSize(m_exitFullscreen);
 
     m_layout->addLayout(backNextLayout);
     m_layout->addWidget(m_reloadStop);
@@ -150,17 +143,15 @@ NavigationBar::NavigationBar(BrowserWindow* window)
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequested(QPoint)));
 
-    connect(m_menuBack, SIGNAL(aboutToShow()), this, SLOT(aboutToShowHistoryBackMenu()));
-    connect(m_menuForward, SIGNAL(aboutToShow()), this, SLOT(aboutToShowHistoryNextMenu()));
     connect(m_buttonBack, SIGNAL(clicked()), this, SLOT(goBack()));
     connect(m_buttonBack, SIGNAL(middleMouseClicked()), this, SLOT(goBackInNewTab()));
     connect(m_buttonBack, SIGNAL(controlClicked()), this, SLOT(goBackInNewTab()));
-    connect(m_buttonNext, SIGNAL(clicked()), this, SLOT(goForward()));
-    connect(m_buttonNext, SIGNAL(middleMouseClicked()), this, SLOT(goForwardInNewTab()));
-    connect(m_buttonNext, SIGNAL(controlClicked()), this, SLOT(goForwardInNewTab()));
+    connect(m_buttonForward, SIGNAL(clicked()), this, SLOT(goForward()));
+    connect(m_buttonForward, SIGNAL(middleMouseClicked()), this, SLOT(goForwardInNewTab()));
+    connect(m_buttonForward, SIGNAL(controlClicked()), this, SLOT(goForwardInNewTab()));
 
-    connect(m_reloadStop->buttonStop(), SIGNAL(clicked()), this, SLOT(stop()));
-    connect(m_reloadStop->buttonReload(), SIGNAL(clicked()), this, SLOT(reload()));
+    connect(m_reloadStop, SIGNAL(stopClicked()), this, SLOT(stop()));
+    connect(m_reloadStop, SIGNAL(reloadClicked()), this, SLOT(reload()));
     connect(m_buttonHome, SIGNAL(clicked()), m_window, SLOT(goHome()));
     connect(m_buttonHome, SIGNAL(middleMouseClicked()), m_window, SLOT(goHomeInNewTab()));
     connect(m_buttonHome, SIGNAL(controlClicked()), m_window, SLOT(goHomeInNewTab()));
@@ -337,7 +328,7 @@ void NavigationBar::refreshHistory()
 
     QWebHistory* history = m_window->weView()->page()->history();
     m_buttonBack->setEnabled(history->canGoBack());
-    m_buttonNext->setEnabled(history->canGoForward());
+    m_buttonForward->setEnabled(history->canGoForward());
 }
 
 void NavigationBar::stop()

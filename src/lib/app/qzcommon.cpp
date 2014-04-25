@@ -1,6 +1,6 @@
 /* ============================================================
 * QupZilla - WebKit based browser
-* Copyright (C) 2010-2014  David Rosca <nowrep@gmail.com>
+* Copyright (C) 2014  David Rosca <nowrep@gmail.com>
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -15,35 +15,19 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * ============================================================ */
-#ifndef RELOADSTOPBUTTON_H
-#define RELOADSTOPBUTTON_H
-
 #include "qzcommon.h"
-#include "toolbutton.h"
 
-class QTimer;
-
-class QUPZILLA_EXPORT ReloadStopButton : public ToolButton
+namespace Qz
 {
-    Q_OBJECT
+const int sessionVersion = 0x0003;
+const int sessionVersionQt5 = 0x0003 | 0x050000;
+const int bookmarksVersion = 1;
 
-public:
-    explicit ReloadStopButton(QWidget* parent = 0);
-
-    void showStopButton();
-    void showReloadButton();
-
-signals:
-    void stopClicked();
-    void reloadClicked();
-
-private slots:
-    void updateButton();
-    void buttonClicked();
-
-private:
-    bool m_loadInProgress;
-    QTimer* m_updateTimer;
-};
-
-#endif // RELOADSTOPBUTTON_H
+const char* APPNAME = "QupZilla";
+const char* VERSION = QUPZILLA_VERSION;
+const char* BUILDTIME =  __DATE__" "__TIME__;
+const char* AUTHOR = "David Rosca";
+const char* COPYRIGHT = "2010-2014";
+const char* WWWADDRESS = "http://www.qupzilla.com";
+const char* WIKIADDRESS = "https://github.com/QupZilla/qupzilla/wiki";
+}

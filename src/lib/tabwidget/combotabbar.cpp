@@ -46,6 +46,8 @@ ComboTabBar::ComboTabBar(QWidget* parent)
     , m_usesScrollButtons(false)
     , m_blockCurrentChangedSignal(false)
 {
+    QObject::setObjectName(QSL("tabbarwidget"));
+
     m_mainTabBar = new TabBarHelper(this);
     m_pinnedTabBar = new TabBarHelper(this);
     m_mainTabBarWidget = new TabBarScrollWidget(m_mainTabBar, this);
@@ -215,26 +217,24 @@ QRect ComboTabBar::tabRect(int index) const
 
 int ComboTabBar::tabAt(const QPoint &pos) const
 {
-    int index = m_pinnedTabBarWidget->tabAt(m_pinnedTabBarWidget->mapFromParent(pos));
+    if (!qobject_cast<TabBarHelper*>(QApplication::widgetAt(mapToGlobal(pos))))
+        return -1;
 
-    if (index != -1) {
+    int index = m_pinnedTabBarWidget->tabAt(m_pinnedTabBarWidget->mapFromParent(pos));
+    if (index != -1)
         return index;
-    }
 
     index = m_mainTabBarWidget->tabAt(m_mainTabBarWidget->mapFromParent(pos));
-
-    if (index != -1) {
+    if (index != -1)
         index += pinnedTabsCount();
-    }
 
     return index;
 }
 
 bool ComboTabBar::emptyArea(const QPoint &pos) const
 {
-    if (tabAt(pos) != -1) {
+    if (tabAt(pos) != -1)
         return false;
-    }
 
     return qobject_cast<TabBarHelper*>(QApplication::widgetAt(mapToGlobal(pos)));
 }
@@ -640,10 +640,16 @@ bool ComboTabBar::eventFilter(QObject* obj, QEvent* ev)
 
 void ComboTabBar::paintEvent(QPaintEvent* ev)
 {
-    QWidget::paintEvent(ev);
+    Q_UNUSED(ev);
 
-    // Draw tabbar base even on parts of ComboTabBar that are not directly QTabBar
+    // This is needed to apply style sheets
+    QStyleOption option;
+    option.init(this);
     QPainter p(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &option, &p, this);
+
+#ifndef Q_OS_MAC
+    // Draw tabbar base even on parts of ComboTabBar that are not directly QTabBar
     QStyleOptionTabBarBaseV2 opt;
     TabBarHelper::initStyleBaseOption(&opt, m_mainTabBar, size());
 
@@ -670,6 +676,7 @@ void ComboTabBar::paintEvent(QPaintEvent* ev)
         opt.rect.setWidth(scrollButtonWidth);
         style()->drawPrimitive(QStyle::PE_FrameTabBarBase, &opt, &p);
     }
+#endif
 }
 
 int ComboTabBar::comboTabBarPixelMetric(ComboTabBar::SizeType sizeType) const
